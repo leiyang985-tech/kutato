@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "智能错题本",
+    "slug": "kutato",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "kutato",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.kutato.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "用于拍照录入错题",
+        "NSPhotoLibraryUsageDescription": "用于从相册选择错题图片"
+      }
+    },
+    "android": {
+      "package": "com.kutato.app"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "允许「智能错题本」访问相册以录入错题",
+          "cameraPermission": "允许「智能错题本」使用相机拍照录入错题"
+        }
+      ]
+    ]
+  }
+}
