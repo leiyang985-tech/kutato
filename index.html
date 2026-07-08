@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>西安市动态交通网络图</title>
+<style>
+  :root {
+    --surface-1: #fcfcfb;
+    --page: #f9f9f7;
+    --text-primary: #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted: #898781;
+    --grid: #e1e0d9;
+    --baseline: #c3c2b7;
+    --border: rgba(11,11,11,0.10);
+    --road-casing: #e1e0d9;
+    --water: #d7e6f2;
+    --park: #e2ecdd;
+    --wall: #b9b3a4;
+    --st-good: #0ca30c;
+    --st-warn: #fab219;
+    --st-serious: #ec835a;
+    --st-critical: #d03b3b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --surface-1: #1a1a19;
+      --page: #0d0d0d;
+      --text-primary: #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted: #898781;
+      --grid: #2c2c2a;
+      --baseline: #383835;
+      --border: rgba(255,255,255,0.10);
+      --road-casing: #33332f;
+      --water: #1e2b36;
+      --park: #20281e;
+      --wall: #5c574a;
+    }
+  }
+  :root[data-theme="light"] {
+    --surface-1: #fcfcfb; --page: #f9f9f7;
+    --text-primary: #0b0b0b; --text-secondary: #52514e; --text-muted: #898781;
+    --grid: #e1e0d9; --baseline: #c3c2b7; --border: rgba(11,11,11,0.10);
+    --road-casing: #e1e0d9; --water: #d7e6f2; --park: #e2ecdd; --wall: #b9b3a4;
+  }
+  :root[data-theme="dark"] {
+    --surface-1: #1a1a19; --page: #0d0d0d;
+    --text-primary: #ffffff; --text-secondary: #c3c2b7; --text-muted: #898781;
+    --grid: #2c2c2a; --baseline: #383835; --border: rgba(255,255,255,0.10);
+    --road-casing: #33332f; --water: #1e2b36; --park: #20281e; --wall: #5c574a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--text-primary);
+    font-family: system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 20px 16px 40px; }
+  header h1 { font-size: 20px; font-weight: 650; margin: 0 0 2px; }
+  header p { margin: 0 0 16px; color: var(--text-secondary); font-size: 13px; }
+
+  .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 12px; }
+  .tile {
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 14px;
+  }
+  .tile .k { font-size: 12px; color: var(--text-secondary); }
+  .tile .v { font-size: 22px; font-weight: 650; margin-top: 2px; }
+  .tile .v small { font-size: 12px; font-weight: 400; color: var(--text-muted); margin-left: 2px; }
+
+  .controls {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px;
+    padding: 8px 12px; margin-bottom: 12px;
+  }
+  .controls button, .controls select {
+    font: inherit; font-size: 13px; color: var(--text-primary);
+    background: transparent; border: 1px solid var(--baseline); border-radius: 8px;
+    padding: 5px 12px; cursor: pointer;
+  }
+  .controls button:hover, .controls select:hover { border-color: var(--text-muted); }
+  #clock { font-variant-numeric: tabular-nums; font-weight: 650; font-size: 16px; min-width: 56px; }
+  #daypart { font-size: 12px; color: var(--text-secondary); min-width: 60px; }
+  #timeSlider { flex: 1; min-width: 160px; accent-color: var(--text-primary); }
+  .spacer { flex: 1; }
+
+  .mapcard {
+    position: relative; background: var(--surface-1);
+    border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+  }
+  #map { display: block; width: 100%; height: auto; cursor: crosshair; }
+
+  .legend {
+    display: flex; gap: 18px; flex-wrap: wrap; align-items: center;
+    padding: 10px 14px; border-top: 1px solid var(--border); font-size: 12.5px;
+    color: var(--text-secondary);
+  }
+  .legend .item { display: flex; align-items: center; gap: 6px; }
+  .legend .sw { width: 18px; height: 5px; border-radius: 3px; }
+  .legend .note { margin-left: auto; color: var(--text-muted); }
+
+  #tooltip {
+    position: absolute; pointer-events: none; display: none; z-index: 5;
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+    padding: 8px 10px; font-size: 12.5px; min-width: 150px;
+  }
+  #tooltip .t-road { font-weight: 650; margin-bottom: 3px; }
+  #tooltip .t-row { display: flex; justify-content: space-between; gap: 14px; color: var(--text-secondary); }
+  #tooltip .t-row b { color: var(--text-primary); font-weight: 600; font-variant-numeric: tabular-nums; }
+  #tooltip .chip { display: inline-flex; align-items: center; gap: 5px; }
+  #tooltip .chip i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+
+  .tablecard { margin-top: 12px; background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .tablecard[hidden] { display: none; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 7px 14px; border-top: 1px solid var(--grid); }
+  thead th { border-top: none; color: var(--text-secondary); font-weight: 600; font-size: 12px; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  td .chip { display: inline-flex; align-items: center; gap: 6px; }
+  td .chip i { width: 9px; height: 9px; border-radius: 50%; }
+
+  footer { margin-top: 14px; font-size: 12px; color: var(--text-muted); }
+</style>
+</head>
+<body>
+<div class="wrap viz-root">
+  <header>
+    <h1>西安市动态交通网络图</h1>
+    <p>主城区骨干路网实时路况模拟 —— 环城路 · 二环 · 三环 · 绕城高速及主要干道（示意图，数据为模拟生成）</p>
+  </header>
+
+  <div class="tiles">
+    <div class="tile"><div class="k">交通拥堵指数</div><div class="v" id="tpi">–</div></div>
+    <div class="tile"><div class="k">全网平均车速</div><div class="v" id="avgSpeed">–<small>km/h</small></div></div>
+    <div class="tile"><div class="k">拥堵路段占比</div><div class="v" id="jamPct">–<small>%</small></div></div>
+    <div class="tile"><div class="k">严重拥堵路段</div><div class="v" id="jamCnt">–<small>段</small></div></div>
+  </div>
+
+  <div class="controls">
+    <button id="playBtn" aria-label="播放/暂停">⏸ 暂停</button>
+    <span id="clock">08:00</span>
+    <span id="daypart">早高峰</span>
+    <input type="range" id="timeSlider" min="0" max="1439" step="1" value="480" aria-label="时间">
+    <select id="speedSel" aria-label="播放速度">
+      <option value="4">4 分钟/秒</option>
+      <option value="10" selected>10 分钟/秒</option>
+      <option value="30">30 分钟/秒</option>
+    </select>
+    <span class="spacer"></span>
+    <button id="tableBtn">数据表</button>
+    <button id="themeBtn">🌗 主题</button>
+  </div>
+
+  <div class="mapcard">
+    <canvas id="map" width="1000" height="1040" role="img" aria-label="西安市交通路况示意地图"></canvas>
+    <div id="tooltip"></div>
+    <div class="legend" role="list" aria-label="路况图例">
+      <div class="item" role="listitem"><span class="sw" style="background:var(--st-good)"></span>畅通</div>
+      <div class="item" role="listitem"><span class="sw" style="background:var(--st-warn)"></span>缓行</div>
+      <div class="item" role="listitem"><span class="sw" style="background:var(--st-serious)"></span>拥堵</div>
+      <div class="item" role="listitem"><span class="sw" style="background:var(--st-critical)"></span>严重拥堵</div>
+      <span class="note">流动虚线方向示意车流 · 悬停路段查看详情</span>
+    </div>
+  </div>
+
+  <div class="tablecard" id="tablecard" hidden>
+    <table aria-label="各道路当前路况数据">
+      <thead>
+        <tr><th>道路</th><th>等级</th><th>当前状态</th><th class="num">平均车速 km/h</th><th class="num">拥堵指数</th></tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <footer>路况为基于时段（早晚高峰潮汐）的模拟数据，路网几何为示意性简化，仅用于可视化演示。</footer>
+</div>
+
+<script>
+"use strict";
+/* ---------- 状态色（固定 status palette，浅/深色模式共用） ---------- */
+const LEVELS = [
+  { key: "good",     name: "畅通",     color: "#0ca30c", max: 0.32 },
+  { key: "warn",     name: "缓行",     color: "#fab219", max: 0.55 },
+  { key: "serious",  name: "拥堵",     color: "#ec835a", max: 0.78 },
+  { key: "critical", name: "严重拥堵", color: "#d03b3b", max: 1.01 },
+];
+function levelOf(c) { return LEVELS[c < 0.32 ? 0 : c < 0.55 ? 1 : c < 0.78 ? 2 : 3]; }
+
+/* ---------- 几何工具 ---------- */
+function roundedRect(x1, y1, x2, y2, r, n = 7) {
+  // 顺时针圆角矩形折线（闭合）
+  const pts = [];
+  const arc = (cx, cy, a0, a1) => {
+    for (let i = 0; i <= n; i++) {
+      const a = a0 + (a1 - a0) * i / n;
+      pts.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]);
+    }
+  };
+  pts.push([x1 + r, y1]);
+  pts.push([x2 - r, y1]); arc(x2 - r, y1 + r, -Math.PI / 2, 0);
+  pts.push([x2, y2 - r]); arc(x2 - r, y2 - r, 0, Math.PI / 2);
+  pts.push([x1 + r, y2]); arc(x1 + r, y2 - r, Math.PI / 2, Math.PI);
+  pts.push([x1, y1 + r]); arc(x1 + r, y1 + r, Math.PI, Math.PI * 1.5);
+  return pts;
+}
+
+/* ---------- 路网定义（示意坐标，北向上，1000×1040 画布） ----------
+   cls: hwy 高速 / ring 环线 / major 主干道 / minor 次干道
+   base: 基础拥堵倾向  sens: 高峰敏感度 */
+const ROADS = [
+  { name: "绕城高速",   cls: "hwy",  base: 0.10, sens: 0.55, closed: true,  pts: roundedRect(75, 95, 930, 925, 70) },
+  { name: "三环路",     cls: "ring", base: 0.22, sens: 0.85, closed: true,  pts: roundedRect(180, 225, 830, 825, 48) },
+  { name: "二环路",     cls: "ring", base: 0.32, sens: 1.05, closed: true,  pts: roundedRect(330, 362, 678, 682, 30) },
+  { name: "环城路",     cls: "major", base: 0.30, sens: 0.95, closed: true, pts: roundedRect(408, 452, 592, 588, 8) },
+  { name: "未央路",     cls: "major", base: 0.30, sens: 1.10, pts: [[500, 452], [500, 362], [500, 225], [500, 118]] },
+  { name: "长安路",     cls: "major", base: 0.32, sens: 1.10, pts: [[500, 588], [500, 682], [500, 825], [500, 918]] },
+  { name: "西大街—枣园路", cls: "major", base: 0.26, sens: 0.95, pts: [[408, 520], [330, 520], [180, 520], [78, 520]] },
+  { name: "东大街—长乐路", cls: "major", base: 0.28, sens: 1.00, pts: [[592, 520], [678, 520], [830, 520], [928, 520]] },
+  { name: "北大街—南大街", cls: "major", base: 0.30, sens: 0.95, pts: [[500, 452], [500, 588]] },
+  { name: "解放路",     cls: "minor", base: 0.28, sens: 0.90, pts: [[547, 452], [547, 520]] },
+  { name: "雁塔路",     cls: "major", base: 0.30, sens: 1.00, pts: [[547, 588], [547, 682], [547, 762]] },
+  { name: "朱雀大街",   cls: "minor", base: 0.26, sens: 0.95, pts: [[452, 588], [452, 682], [452, 825]] },
+  { name: "太白南路",   cls: "major", base: 0.34, sens: 1.15, pts: [[400, 682], [378, 760], [352, 860], [340, 918]] },
+  { name: "咸宁路",     cls: "minor", base: 0.24, sens: 0.90, pts: [[678, 600], [760, 600], [830, 600]] },
+  { name: "大庆路",     cls: "minor", base: 0.24, sens: 0.90, pts: [[330, 480], [250, 480], [180, 480]] },
+  { name: "科技路",     cls: "major", base: 0.30, sens: 1.05, pts: [[180, 700], [280, 700], [400, 700], [462, 700]] },
+  { name: "凤城八路",   cls: "minor", base: 0.22, sens: 0.90, pts: [[335, 262], [430, 262], [570, 262], [675, 262]] },
+  { name: "曲江大道",   cls: "minor", base: 0.24, sens: 0.85, pts: [[600, 682], [640, 740], [665, 800], [672, 823]] },
+  { name: "机场专用高速", cls: "hwy", base: 0.10, sens: 0.60, pts: [[398, 225], [340, 160], [268, 98]] },
+  { name: "连霍高速（东段）", cls: "hwy", base: 0.10, sens: 0.55, pts: [[830, 470], [900, 430], [929, 412]] },
+  { name: "西汉高速",   cls: "hwy",  base: 0.08, sens: 0.50, pts: [[430, 825], [400, 890], [382, 924]] },
+];
+
+const CLS = {
+  hwy:   { w: 7.5, vmax: 100, dash: [13, 16] },
+  ring:  { w: 6.5, vmax: 70,  dash: [11, 13] },
+  major: { w: 5.0, vmax: 60,  dash: [9, 11] },
+  minor: { w: 3.8, vmax: 50,  dash: [8, 10] },
+};
+
+/* 地标 */
+const LANDMARKS = [
+  { name: "钟楼",     x: 500, y: 520, anchor: "center" },
+  { name: "西安北站", x: 500, y: 108, anchor: "top" },
+  { name: "西安站",   x: 547, y: 442, anchor: "top" },
+  { name: "大明宫",   x: 566, y: 392, anchor: "right" },
+  { name: "大雁塔",   x: 547, y: 772, anchor: "bottom" },
+  { name: "高新区",   x: 300, y: 712, anchor: "bottom" },
+  { name: "曲江池",   x: 650, y: 858, anchor: "bottom" },
+  { name: "永宁门",   x: 500, y: 596, anchor: "right" },
+];
+
+/* 环线名称标注位置 */
+const RING_LABELS = [
+  { name: "绕城高速", x: 502, y: 88 },
+  { name: "北三环",   x: 380, y: 218 },
+  { name: "南三环",   x: 330, y: 840 },
+  { name: "北二环",   x: 590, y: 355 },
+  { name: "南二环",   x: 395, y: 693 },
+  { name: "西二环",   x: 322, y: 430 },
+  { name: "东二环",   x: 686, y: 620 },
+];
+
+/* ---------- 路段切分 ---------- */
+const SEG_LEN = 52;
+const segments = []; // {road, pts, cx, cy, seed, dashOff, c}
+ROADS.forEach((road, ri) => {
+  const P = road.closed ? road.pts.concat([road.pts[0]]) : road.pts;
+  let acc = 0, cur = [P[0]], segIdx = 0;
+  const flush = () => {
+    if (cur.length < 2) return;
+    let sx = 0, sy = 0;
+    cur.forEach(p => { sx += p[0]; sy += p[1]; });
+    segments.push({
+      road, pts: cur, cx: sx / cur.length, cy: sy / cur.length,
+      seed: ri * 13.7 + segIdx * 2.31, dashOff: Math.random() * 40, c: 0,
+    });
+    segIdx++;
+  };
+  for (let i = 1; i < P.length; i++) {
+    let [x0, y0] = cur[cur.length - 1];
+    const [x1, y1] = P[i];
+    let d = Math.hypot(x1 - x0, y1 - y0);
+    let remain = d;
+    while (acc + remain >= SEG_LEN) {
+      const need = SEG_LEN - acc;
+      const t = need / remain;
+      const nx = x0 + (x1 - x0) * t, ny = y0 + (y1 - y0) * t;
+      cur.push([nx, ny]);
+      flush();
+      cur = [[nx, ny]];
+      x0 = nx; y0 = ny;
+      remain -= need; acc = 0;
+      // 剩余段相对新起点
+      const nd = Math.hypot(x1 - x0, y1 - y0);
+      remain = nd;
+      if (remain < 1e-6) break;
+    }
+    if (remain > 1e-6) { cur.push([x1, y1]); acc += remain; }
+  }
+  if (cur.length > 1) flush();
+});
+
+/* ---------- 拥堵模型 ---------- */
+function gauss(x, mu, sigma) { const d = (x - mu) / sigma; return Math.exp(-0.5 * d * d); }
+function peakProfile(h) {
+  // 早高峰 8:10，晚高峰 18:20，午间小高峰，夜间低谷
+  return 1.0 * gauss(h, 8.15, 1.05)
+       + 1.05 * gauss(h, 18.3, 1.25)
+       + 0.28 * gauss(h, 13, 2.6)
+       - 0.16 * gauss(((h + 12) % 24), 12 + 3.5, 2.2); // 凌晨 3:30 最空
+}
+function congestion(seg, h) {
+  const wob = 0.15 * Math.sin(h * 1.9 + seg.seed)
+            + 0.09 * Math.sin(h * 4.3 + seg.seed * 2.7)
+            + 0.06 * Math.sin(seg.seed * 5.1);
+  const c = seg.road.base + seg.road.sens * 0.42 * peakProfile(h) + wob;
+  return Math.min(1, Math.max(0, c));
+}
+function speedOf(seg) {
+  const vmax = CLS[seg.road.cls].vmax;
+  return Math.max(7, vmax * (1 - 0.85 * seg.c));
+}
+
+/* ---------- 主题 ---------- */
+const themeBtn = document.getElementById("themeBtn");
+let theme = {};
+function readTheme() {
+  const s = getComputedStyle(document.documentElement);
+  theme = {
+    surface: s.getPropertyValue("--surface-1").trim(),
+    casing: s.getPropertyValue("--road-casing").trim(),
+    muted: s.getPropertyValue("--text-muted").trim(),
+    secondary: s.getPropertyValue("--text-secondary").trim(),
+    primary: s.getPropertyValue("--text-primary").trim(),
+    wall: s.getPropertyValue("--wall").trim(),
+    park: s.getPropertyValue("--park").trim(),
+    water: s.getPropertyValue("--water").trim(),
+  };
+}
+themeBtn.addEventListener("click", () => {
+  const cur = document.documentElement.dataset.theme
+    || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+  document.documentElement.dataset.theme = cur === "dark" ? "light" : "dark";
+  readTheme();
+});
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", readTheme);
+readTheme();
+
+/* ---------- 时间控制 ---------- */
+let simMin = 8 * 60;      // 从 08:00 开始
+let playing = true;
+let speedFactor = 10;     // 模拟分钟 / 真实秒
+const playBtn = document.getElementById("playBtn");
+const slider = document.getElementById("timeSlider");
+const clockEl = document.getElementById("clock");
+const daypartEl = document.getElementById("daypart");
+document.getElementById("speedSel").addEventListener("change", e => speedFactor = +e.target.value);
+playBtn.addEventListener("click", () => {
+  playing = !playing;
+  playBtn.textContent = playing ? "⏸ 暂停" : "▶ 播放";
+});
+slider.addEventListener("input", () => { simMin = +slider.value; });
+function daypart(h) {
+  if (h < 5) return "凌晨";
+  if (h < 7) return "清晨";
+  if (h < 9.5) return "早高峰";
+  if (h < 12) return "上午";
+  if (h < 14) return "午间";
+  if (h < 17) return "下午";
+  if (h < 19.75) return "晚高峰";
+  if (h < 23) return "夜间";
+  return "深夜";
+}
+
+/* ---------- 渲染 ---------- */
+const canvas = document.getElementById("map");
+const ctx = canvas.getContext("2d");
+const W = 1000, H = 1040;
+function fitCanvas() {
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const cssW = canvas.clientWidth || W;
+  canvas.width = Math.round(cssW * dpr);
+  canvas.height = Math.round(cssW * (H / W) * dpr);
+}
+new ResizeObserver(fitCanvas).observe(canvas);
+fitCanvas();
+
+function drawPoly(pts, close) {
+  ctx.beginPath();
+  ctx.moveTo(pts[0][0], pts[0][1]);
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+  if (close) ctx.closePath();
+}
+
+function labelWithHalo(text, x, y, font, color, align = "center", baselineTB = "middle") {
+  ctx.font = font;
+  ctx.textAlign = align;
+  ctx.textBaseline = baselineTB;
+  ctx.lineWidth = 3.5;
+  ctx.strokeStyle = theme.surface;
+  ctx.lineJoin = "round";
+  ctx.strokeText(text, x, y);
+  ctx.fillStyle = color;
+  ctx.fillText(text, x, y);
+}
+
+let hoverSeg = null;
+
+function render(dtSec) {
+  const h = (simMin / 60) % 24;
+  // 更新各路段拥堵与流动偏移
+  for (const s of segments) {
+    s.c = congestion(s, h);
+    s.dashOff -= dtSec * (4 + speedOf(s) * 0.55); // 车速越快虚线流动越快
+  }
+
+  const scale = canvas.width / W;
+  ctx.setTransform(scale, 0, 0, scale, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = theme.surface;
+  ctx.fillRect(0, 0, W, H);
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+
+  /* 底景：渭河 / 城墙 / 曲江池 */
+  ctx.strokeStyle = theme.water;
+  ctx.lineWidth = 14;
+  ctx.beginPath();
+  ctx.moveTo(60, 70);
+  ctx.bezierCurveTo(300, 30, 640, 62, 950, 42);
+  ctx.stroke();
+  labelWithHalo("渭 河", 800, 66, "12px system-ui", theme.muted);
+
+  ctx.fillStyle = theme.water;
+  ctx.beginPath();
+  ctx.ellipse(650, 848, 30, 17, -0.3, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = theme.wall;
+  ctx.lineWidth = 2;
+  ctx.setLineDash([6, 4]);
+  ctx.strokeRect(420, 462, 160, 116); // 明城墙
+  ctx.setLineDash([]);
+
+  /* 道路底衬（casing） */
+  for (const r of ROADS) {
+    ctx.strokeStyle = theme.casing;
+    ctx.lineWidth = CLS[r.cls].w + 3;
+    drawPoly(r.pts, r.closed);
+    ctx.stroke();
+  }
+
+  /* 路况着色：半透明实线 + 流动虚线 */
+  for (const s of segments) {
+    const lv = levelOf(s.c);
+    const w = CLS[s.road.cls].w;
+    ctx.strokeStyle = lv.color;
+    ctx.globalAlpha = 0.42;
+    ctx.lineWidth = w;
+    drawPoly(s.pts, false);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.setLineDash(CLS[s.road.cls].dash);
+    ctx.lineDashOffset = s.dashOff;
+    ctx.lineWidth = w;
+    drawPoly(s.pts, false);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  /* 悬停高亮 */
+  if (hoverSeg) {
+    ctx.strokeStyle = theme.primary;
+    ctx.globalAlpha = 0.9;
+    ctx.lineWidth = CLS[hoverSeg.road.cls].w + 5;
+    drawPoly(hoverSeg.pts, false);
+    ctx.globalAlpha = 1;
+    ctx.setLineDash([]);
+    ctx.stroke();
+    ctx.strokeStyle = levelOf(hoverSeg.c).color;
+    ctx.lineWidth = CLS[hoverSeg.road.cls].w;
+    drawPoly(hoverSeg.pts, false);
+    ctx.stroke();
+  }
+
+  /* 标注 */
+  for (const rl of RING_LABELS)
+    labelWithHalo(rl.name, rl.x, rl.y, "12px system-ui", theme.muted);
+  const roadLabels = [
+    ["未央路", 512, 300, "left"], ["长安路", 512, 750, "left"],
+    ["西大街", 300, 508, "center"], ["长乐路", 750, 508, "center"],
+    ["太白南路", 366, 800, "right"], ["雁塔路", 559, 660, "left"],
+    ["科技路", 300, 688, "center"], ["朱雀大街", 442, 750, "right"],
+    ["咸宁路", 758, 588, "center"], ["凤城八路", 500, 250, "center"],
+    ["曲江大道", 655, 745, "left"], ["机场高速", 322, 148, "right"],
+  ];
+  for (const [t, x, y, a] of roadLabels)
+    labelWithHalo(t, x, y, "11.5px system-ui", theme.muted, a);
+
+  for (const lm of LANDMARKS) {
+    ctx.fillStyle = theme.secondary;
+    ctx.beginPath();
+    ctx.arc(lm.x, lm.y, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = theme.surface;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    let dx = 0, dy = 0, align = "center", vb = "middle";
+    if (lm.anchor === "top") { dy = -12; vb = "bottom"; }
+    if (lm.anchor === "bottom") { dy = 12; vb = "top"; }
+    if (lm.anchor === "right") { dx = 10; align = "left"; }
+    if (lm.anchor === "left") { dx = -10; align = "right"; }
+    if (lm.anchor === "center") { dy = -12; vb = "bottom"; }
+    labelWithHalo(lm.name, lm.x + dx, lm.y + dy, "600 12px system-ui", theme.secondary, align, vb);
+  }
+
+  /* 指北针 */
+  ctx.fillStyle = theme.muted;
+  ctx.beginPath();
+  ctx.moveTo(950, 960); ctx.lineTo(958, 990); ctx.lineTo(950, 983); ctx.lineTo(942, 990);
+  ctx.closePath(); ctx.fill();
+  labelWithHalo("北", 950, 950, "600 13px system-ui", theme.muted, "center", "bottom");
+}
+
+/* ---------- 统计与表格 ---------- */
+const tpiEl = document.getElementById("tpi");
+const avgSpeedEl = document.getElementById("avgSpeed");
+const jamPctEl = document.getElementById("jamPct");
+const jamCntEl = document.getElementById("jamCnt");
+const tbody = document.getElementById("tbody");
+const tablecard = document.getElementById("tablecard");
+document.getElementById("tableBtn").addEventListener("click", () => {
+  tablecard.hidden = !tablecard.hidden;
+});
+const CLS_NAME = { hwy: "高速", ring: "环线", major: "主干道", minor: "次干道" };
+
+function updateStats() {
+  let sumC = 0, sumV = 0, jam = 0, severe = 0;
+  for (const s of segments) {
+    sumC += s.c; sumV += speedOf(s);
+    if (s.c >= 0.55) jam++;
+    if (s.c >= 0.78) severe++;
+  }
+  const n = segments.length;
+  tpiEl.textContent = (1 + 9 * (sumC / n)).toFixed(1);
+  avgSpeedEl.innerHTML = (sumV / n).toFixed(0) + "<small>km/h</small>";
+  jamPctEl.innerHTML = (100 * jam / n).toFixed(0) + "<small>%</small>";
+  jamCntEl.innerHTML = severe + "<small>段</small>";
+
+  if (!tablecard.hidden) {
+    const byRoad = new Map();
+    for (const s of segments) {
+      const e = byRoad.get(s.road) || { c: 0, v: 0, n: 0 };
+      e.c += s.c; e.v += speedOf(s); e.n++;
+      byRoad.set(s.road, e);
+    }
+    const rows = [...byRoad.entries()]
+      .map(([r, e]) => ({ r, c: e.c / e.n, v: e.v / e.n }))
+      .sort((a, b) => b.c - a.c);
+    tbody.innerHTML = rows.map(({ r, c, v }) => {
+      const lv = levelOf(c);
+      return `<tr><td>${r.name}</td><td>${CLS_NAME[r.cls]}</td>` +
+        `<td><span class="chip"><i style="background:${lv.color}"></i>${lv.name}</span></td>` +
+        `<td class="num">${v.toFixed(0)}</td><td class="num">${(1 + 9 * c).toFixed(1)}</td></tr>`;
+    }).join("");
+  }
+}
+
+/* ---------- 悬停提示 ---------- */
+const tooltip = document.getElementById("tooltip");
+function segDist(px, py, s) {
+  let best = 1e9;
+  for (let i = 1; i < s.pts.length; i++) {
+    const [x0, y0] = s.pts[i - 1], [x1, y1] = s.pts[i];
+    const dx = x1 - x0, dy = y1 - y0;
+    const L2 = dx * dx + dy * dy || 1e-9;
+    let t = ((px - x0) * dx + (py - y0) * dy) / L2;
+    t = Math.max(0, Math.min(1, t));
+    const d = Math.hypot(px - (x0 + dx * t), py - (y0 + dy * t));
+    if (d < best) best = d;
+  }
+  return best;
+}
+canvas.addEventListener("mousemove", e => {
+  const rect = canvas.getBoundingClientRect();
+  const px = (e.clientX - rect.left) * (W / rect.width);
+  const py = (e.clientY - rect.top) * (W / rect.width);
+  let best = null, bd = 12;
+  for (const s of segments) {
+    if (Math.abs(s.cx - px) > 70 || Math.abs(s.cy - py) > 70) continue;
+    const d = segDist(px, py, s);
+    if (d < bd) { bd = d; best = s; }
+  }
+  hoverSeg = best;
+  if (best) {
+    const lv = levelOf(best.c);
+    tooltip.innerHTML =
+      `<div class="t-road">${best.road.name} <span style="color:var(--text-muted);font-weight:400">· ${CLS_NAME[best.road.cls]}</span></div>` +
+      `<div class="t-row"><span>路况</span><b class="chip"><i style="background:${lv.color}"></i>${lv.name}</b></div>` +
+      `<div class="t-row"><span>平均车速</span><b>${speedOf(best).toFixed(0)} km/h</b></div>` +
+      `<div class="t-row"><span>拥堵指数</span><b>${(1 + 9 * best.c).toFixed(1)}</b></div>`;
+    tooltip.style.display = "block";
+    const card = canvas.parentElement.getBoundingClientRect();
+    let tx = e.clientX - card.left + 14, ty = e.clientY - card.top + 14;
+    if (tx + 180 > card.width) tx -= 200;
+    if (ty + 110 > card.height) ty -= 120;
+    tooltip.style.left = tx + "px";
+    tooltip.style.top = ty + "px";
+  } else {
+    tooltip.style.display = "none";
+  }
+});
+canvas.addEventListener("mouseleave", () => { hoverSeg = null; tooltip.style.display = "none"; });
+
+/* ---------- 主循环 ---------- */
+let lastT = performance.now(), lastStats = 0;
+function frame(now) {
+  const dt = Math.min(0.1, (now - lastT) / 1000);
+  lastT = now;
+  if (playing) simMin = (simMin + dt * speedFactor) % 1440; // speedFactor: 模拟分钟/真实秒
+  slider.value = Math.round(simMin);
+  const hh = Math.floor(simMin / 60), mm = Math.floor(simMin % 60);
+  clockEl.textContent = String(hh).padStart(2, "0") + ":" + String(mm).padStart(2, "0");
+  daypartEl.textContent = daypart(simMin / 60);
+  render(dt);
+  if (now - lastStats > 400) { updateStats(); lastStats = now; }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
