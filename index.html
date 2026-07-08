@@ -1,0 +1,880 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>一元一次方程 · 互动学习</title>
+</head>
+<body>
+<style>
+  /* ============ 设计令牌:练习本(浅色)/ 黑板(深色) ============ */
+  :root {
+    --paper: #f8f7f1;
+    --grid: rgba(38, 96, 160, 0.10);
+    --card: #fffefb;
+    --card-edge: rgba(28, 61, 110, 0.16);
+    --ink: #1c3d6e;          /* 墨水蓝:标题、主按钮 */
+    --text: #2b3440;         /* 正文 */
+    --muted: #6b7684;
+    --red-pen: #c9403a;      /* 批改红 */
+    --red-soft: rgba(201, 64, 58, 0.10);
+    --green-pen: #2e8c5e;    /* 对勾绿 */
+    --green-soft: rgba(46, 140, 94, 0.12);
+    --gold: #b98a1c;         /* 星星 / 连对 */
+    --chip-x: #3563a8;       /* 天平上的 x 方块 */
+    --chip-u: #e2b04a;       /* 砝码 */
+    --btn-text: #fffefb;
+    --shadow: 0 2px 10px rgba(40, 60, 90, 0.10);
+    --focus: #b98a1c;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #1e2b26;                    /* 黑板绿 */
+      --grid: rgba(237, 232, 214, 0.07);   /* 粉笔格线 */
+      --card: #27362f;
+      --card-edge: rgba(237, 232, 214, 0.18);
+      --ink: #dce6f5;                      /* 粉笔蓝白 */
+      --text: #e6e1d3;
+      --muted: #a8b0a4;
+      --red-pen: #ff9b8e;
+      --red-soft: rgba(255, 155, 142, 0.13);
+      --green-pen: #8fd6a9;
+      --green-soft: rgba(143, 214, 169, 0.14);
+      --gold: #f0cc70;
+      --chip-x: #7ea8dd;
+      --chip-u: #e9c46a;
+      --btn-text: #1e2b26;
+      --shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+      --focus: #f0cc70;
+    }
+  }
+  :root[data-theme="light"] {
+    --paper: #f8f7f1; --grid: rgba(38,96,160,0.10); --card: #fffefb;
+    --card-edge: rgba(28,61,110,0.16); --ink: #1c3d6e; --text: #2b3440;
+    --muted: #6b7684; --red-pen: #c9403a; --red-soft: rgba(201,64,58,0.10);
+    --green-pen: #2e8c5e; --green-soft: rgba(46,140,94,0.12); --gold: #b98a1c;
+    --chip-x: #3563a8; --chip-u: #e2b04a; --btn-text: #fffefb;
+    --shadow: 0 2px 10px rgba(40,60,90,0.10); --focus: #b98a1c;
+  }
+  :root[data-theme="dark"] {
+    --paper: #1e2b26; --grid: rgba(237,232,214,0.07); --card: #27362f;
+    --card-edge: rgba(237,232,214,0.18); --ink: #dce6f5; --text: #e6e1d3;
+    --muted: #a8b0a4; --red-pen: #ff9b8e; --red-soft: rgba(255,155,142,0.13);
+    --green-pen: #8fd6a9; --green-soft: rgba(143,214,169,0.14); --gold: #f0cc70;
+    --chip-x: #7ea8dd; --chip-u: #e9c46a; --btn-text: #1e2b26;
+    --shadow: 0 2px 12px rgba(0,0,0,0.35); --focus: #f0cc70;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background-color: var(--paper);
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 26px 26px;
+    color: var(--text);
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+    font-size: 16px;
+    line-height: 1.65;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 20px 16px 64px; }
+
+  /* ============ 页眉 ============ */
+  header { display: flex; align-items: flex-start; gap: 14px; margin: 8px 0 18px; }
+  .titles h1 {
+    font-family: "Kaiti SC", "KaiTi", "STKaiti", "PingFang SC", serif;
+    color: var(--ink);
+    font-size: clamp(28px, 5.5vw, 40px);
+    margin: 0; line-height: 1.2; text-wrap: balance;
+  }
+  .titles p { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+  .stamp {
+    margin-left: auto; flex: none;
+    border: 2px solid var(--red-pen); color: var(--red-pen);
+    border-radius: 6px; padding: 4px 10px;
+    font-family: "Kaiti SC", "KaiTi", "STKaiti", serif;
+    font-size: 14px; line-height: 1.35; text-align: center;
+    transform: rotate(4deg); opacity: 0.85; user-select: none;
+  }
+
+  /* ============ 练习本标签页 ============ */
+  nav { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: -1px; position: relative; z-index: 1; }
+  nav button {
+    appearance: none; cursor: pointer;
+    border: 1px solid var(--card-edge); border-bottom: none;
+    border-radius: 10px 10px 0 0;
+    background: transparent; color: var(--muted);
+    padding: 9px 16px 8px; font-size: 15px; font-family: inherit;
+  }
+  nav button[aria-selected="true"] {
+    background: var(--card); color: var(--ink); font-weight: 600;
+  }
+  nav button:focus-visible, .btn:focus-visible, .choice:focus-visible,
+  input:focus-visible, .judge button:focus-visible {
+    outline: 2px solid var(--focus); outline-offset: 2px;
+  }
+  main {
+    background: var(--card);
+    border: 1px solid var(--card-edge);
+    border-radius: 0 12px 12px 12px;
+    box-shadow: var(--shadow);
+    padding: clamp(16px, 3.5vw, 30px);
+  }
+  section[hidden] { display: none; }
+  h2 {
+    font-family: "Kaiti SC", "KaiTi", "STKaiti", serif;
+    color: var(--ink); font-size: 24px; margin: 0 0 6px; text-wrap: balance;
+  }
+  .lede { color: var(--muted); margin: 0 0 18px; max-width: 60ch; }
+
+  /* ============ 通用元件 ============ */
+  .math {
+    font-family: Georgia, "Times New Roman", serif;
+    font-variant-numeric: tabular-nums;
+  }
+  .math i { font-style: italic; padding: 0 1px; }
+  .btn {
+    appearance: none; cursor: pointer; font-family: inherit; font-size: 15px;
+    border-radius: 9px; padding: 9px 18px;
+    border: 1px solid var(--ink);
+    background: var(--ink); color: var(--btn-text);
+  }
+  .btn.ghost { background: transparent; color: var(--ink); }
+  .btn:disabled { opacity: 0.38; cursor: not-allowed; }
+  .note-ok { color: var(--green-pen); }
+  .note-bad { color: var(--red-pen); }
+  .tag {
+    display: inline-block; font-size: 12.5px; letter-spacing: 0.08em;
+    color: var(--muted); text-transform: uppercase;
+  }
+  .scorebar {
+    display: flex; gap: 18px; flex-wrap: wrap; align-items: baseline;
+    font-size: 14.5px; color: var(--muted); margin-bottom: 14px;
+  }
+  .scorebar b { color: var(--gold); font-size: 19px; font-variant-numeric: tabular-nums; }
+
+  /* ============ ① 认一认 ============ */
+  .rulebox { display: grid; gap: 10px; margin: 0 0 20px; padding: 0; list-style: none; }
+  .rulebox li {
+    border: 1px dashed var(--card-edge); border-radius: 10px; padding: 10px 14px;
+  }
+  .rulebox b { color: var(--ink); }
+  .judge-card {
+    border: 1px solid var(--card-edge); border-radius: 12px;
+    padding: 22px 18px; text-align: center;
+  }
+  .judge-card .math { font-size: 30px; color: var(--ink); }
+  .judge { display: flex; gap: 12px; justify-content: center; margin-top: 16px; }
+  .judge button {
+    cursor: pointer; font-family: inherit; font-size: 16px;
+    border-radius: 9px; padding: 10px 26px; border: 1px solid var(--ink);
+    background: transparent; color: var(--ink);
+  }
+  .judge-fb { min-height: 3.2em; margin-top: 12px; font-size: 15px; }
+  .judge-fb .mark { font-size: 22px; font-weight: 700; }
+
+  /* ============ ② 天平演示 ============ */
+  .presets { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  .presets .btn { padding: 7px 14px; font-size: 14px; }
+  .scale-stage { position: relative; height: 300px; margin: 4px auto 6px; max-width: 620px; }
+  .scale { --tilt: 0deg; position: absolute; inset: 0; }
+  .beam {
+    position: absolute; left: 50%; top: 58px; width: min(520px, 92%);
+    height: 10px; border-radius: 6px; background: var(--ink);
+    transform: translateX(-50%) rotate(var(--tilt));
+    transform-origin: center;
+  }
+  .post {
+    position: absolute; left: 50%; top: 62px; transform: translateX(-50%);
+    width: 12px; height: 190px; background: var(--ink); border-radius: 4px;
+  }
+  .base {
+    position: absolute; left: 50%; top: 248px; transform: translateX(-50%);
+    width: 150px; height: 12px; background: var(--ink); border-radius: 6px;
+  }
+  .hanger { position: absolute; top: 4px; width: 150px; }
+  .hanger.left  { left: -12px; }
+  .hanger.right { right: -12px; }
+  .hanger .string {
+    width: 2px; height: 46px; background: var(--muted); margin: 0 auto;
+  }
+  .pan {
+    min-height: 64px; border: 2px solid var(--ink); border-radius: 0 0 60px 60px;
+    border-top-width: 3px; background: var(--card);
+    display: flex; flex-wrap: wrap; gap: 4px; align-items: flex-start;
+    justify-content: center; padding: 7px 9px 15px;
+    transform: rotate(calc(-1 * var(--tilt)));
+    transform-origin: top center;
+  }
+  .chip {
+    width: 26px; height: 26px; display: grid; place-items: center;
+    font-size: 13.5px; font-weight: 700; color: #fff;
+  }
+  .chip.x { background: var(--chip-x); border-radius: 6px; font-style: italic; font-family: Georgia, serif; }
+  .chip.u { background: var(--chip-u); border-radius: 50%; color: #4a3608; }
+  @media (prefers-reduced-motion: no-preference) {
+    .beam, .pan { transition: transform 0.55s cubic-bezier(.34,1.3,.5,1); }
+    .chip { animation: drop 0.3s ease-out; }
+    @keyframes drop { from { transform: translateY(-8px); opacity: 0; } }
+    .shake { animation: shake 0.4s ease-in-out; }
+    @keyframes shake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+  }
+  .scale-eq { text-align: center; font-size: 26px; color: var(--ink); margin: 0 0 14px; }
+  .ops { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  .ops .btn { font-size: 14px; padding: 8px 14px; }
+  .ops .btn.naughty { border-color: var(--red-pen); color: var(--red-pen); background: transparent; }
+  .scale-log {
+    margin: 14px auto 0; max-width: 62ch; min-height: 3.4em;
+    border-left: 3px solid var(--card-edge); padding: 4px 14px; font-size: 15px;
+  }
+  .scale-log.good { border-left-color: var(--green-pen); }
+  .scale-log.bad  { border-left-color: var(--red-pen); }
+  .win-banner {
+    margin: 14px auto 0; max-width: 62ch; text-align: center;
+    background: var(--green-soft); color: var(--green-pen);
+    border-radius: 10px; padding: 12px 16px; font-size: 17px; font-weight: 600;
+  }
+
+  /* ============ ③ 步步为营 ============ */
+  .steps-layout { display: grid; grid-template-columns: 1fr 240px; gap: 22px; }
+  @media (max-width: 700px) { .steps-layout { grid-template-columns: 1fr; } }
+  .step-eq { font-size: 26px; color: var(--ink); margin: 2px 0 4px; }
+  .step-prompt { font-weight: 600; color: var(--ink); margin: 14px 0 10px; }
+  .choices { display: grid; gap: 10px; }
+  .choice {
+    appearance: none; cursor: pointer; font-family: inherit; text-align: left;
+    font-size: 17px; padding: 11px 14px; border-radius: 10px;
+    border: 1px solid var(--card-edge); background: transparent; color: var(--text);
+  }
+  .choice:hover:not(:disabled) { border-color: var(--ink); }
+  .choice.right { border-color: var(--green-pen); background: var(--green-soft); }
+  .choice.wrong { border-color: var(--red-pen); background: var(--red-soft); }
+  .choice:disabled { cursor: default; }
+  .choice small { display: block; font-size: 13.5px; margin-top: 4px; }
+  .choice.wrong small { color: var(--red-pen); }
+  .choice.right small { color: var(--green-pen); }
+  .ledger {
+    border: 1px dashed var(--card-edge); border-radius: 10px; padding: 12px 16px;
+    align-self: start;
+  }
+  .ledger h3 {
+    margin: 0 0 8px; font-size: 13px; color: var(--muted);
+    letter-spacing: 0.1em; font-weight: 600;
+  }
+  .ledger ol { margin: 0; padding-left: 20px; }
+  .ledger li { font-size: 17px; color: var(--ink); margin: 5px 0; }
+  .ledger li::marker { color: var(--muted); font-size: 12px; }
+  .step-done {
+    background: var(--green-soft); color: var(--green-pen);
+    border-radius: 10px; padding: 12px 16px; font-size: 16px; margin-top: 14px;
+  }
+  .step-nav { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+
+  /* ============ ④ 闯关挑战 ============ */
+  .levels { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .quiz-card {
+    border: 1px solid var(--card-edge); border-radius: 12px;
+    padding: 24px 18px 20px; text-align: center;
+  }
+  .quiz-card .math { font-size: 32px; color: var(--ink); }
+  .answer-row {
+    display: flex; gap: 10px; justify-content: center; align-items: center;
+    margin-top: 18px; flex-wrap: wrap; font-size: 22px;
+  }
+  .answer-row .math { font-size: 24px; }
+  .answer-row input {
+    width: 110px; font-size: 22px; text-align: center; font-family: Georgia, serif;
+    padding: 7px 10px; border-radius: 9px;
+    border: 1px solid var(--card-edge); background: transparent; color: var(--text);
+  }
+  .quiz-fb { margin-top: 16px; min-height: 2em; font-size: 16px; }
+  .quiz-fb .mark { font-size: 26px; font-weight: 700; }
+  .solution {
+    margin: 12px auto 0; max-width: 34ch; text-align: left;
+    background: var(--red-soft); border-radius: 10px; padding: 12px 18px;
+  }
+  .solution p { margin: 4px 0; font-size: 16.5px; }
+  .solution .why { font-size: 13.5px; color: var(--muted); }
+  .pass-banner {
+    margin-top: 16px; background: var(--green-soft); color: var(--green-pen);
+    border-radius: 10px; padding: 14px 16px; font-size: 17px; font-weight: 600;
+    text-align: center;
+  }
+  footer { text-align: center; color: var(--muted); font-size: 13px; margin-top: 22px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="titles">
+      <h1>一元一次方程</h1>
+      <p>初一数学核心考点 · 看懂 → 动手 → 闯关,三步吃透</p>
+    </div>
+    <div class="stamp">初一·数学<br>重点必会</div>
+  </header>
+
+  <nav role="tablist" aria-label="学习环节">
+    <button role="tab" aria-selected="true" data-tab="concept">① 认一认</button>
+    <button role="tab" aria-selected="false" data-tab="scale">② 天平演示</button>
+    <button role="tab" aria-selected="false" data-tab="steps">③ 步步为营</button>
+    <button role="tab" aria-selected="false" data-tab="quiz">④ 闯关挑战</button>
+  </nav>
+
+  <main>
+    <!-- ① 概念 -->
+    <section id="tab-concept">
+      <h2>什么是一元一次方程?</h2>
+      <p class="lede">名字里就藏着判断口诀——把这三条记牢,考试里的判断题就是送分题。</p>
+      <ul class="rulebox">
+        <li><b>「一元」</b>:只含有 <b>1 个</b>未知数(通常写作 <span class="math"><i>x</i></span>)。出现 <span class="math"><i>x</i></span> 和 <span class="math"><i>y</i></span> 两个,就不是了。</li>
+        <li><b>「一次」</b>:未知数的次数都是 <b>1</b>。出现 <span class="math"><i>x</i>²</span> 就变成二次了;<span class="math"><i>x</i></span> 在分母上(如 <span class="math">1/<i>x</i></span>)也不行,那不是整式。</li>
+        <li><b>「方程」</b>:必须是含未知数的<b>等式</b>——一定要有「=」!<span class="math">3<i>x</i> − 6</span> 只是代数式,不是方程。</li>
+      </ul>
+      <h2 style="font-size:20px">火眼金睛:下面这个是一元一次方程吗?</h2>
+      <div class="judge-card">
+        <div class="tag">第 <span id="jd-no">1</span> / 8 题</div>
+        <div style="margin:14px 0 4px"><span class="math" id="jd-expr"></span></div>
+        <div class="judge">
+          <button id="jd-yes">是 ✓</button>
+          <button id="jd-not">不是 ✗</button>
+        </div>
+        <div class="judge-fb" id="jd-fb" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <!-- ② 天平 -->
+    <section id="tab-scale" hidden>
+      <h2>方程就是一架天平</h2>
+      <p class="lede">解方程的全部秘密只有一句话:<b>两边同时做同样的事,天平就一直平衡</b>(这就是课本里的「等式的性质」)。动手把砝码拿掉,让 <span class="math"><i>x</i></span> 单独留在一边,你就解出方程了!</p>
+      <div class="presets" id="scale-presets"></div>
+      <p class="scale-eq math" id="scale-eq" aria-live="polite"></p>
+      <div class="scale-stage">
+        <div class="scale" id="scale">
+          <div class="post"></div>
+          <div class="base"></div>
+          <div class="beam">
+            <div class="hanger left"><div class="string"></div><div class="pan" id="pan-left"></div></div>
+            <div class="hanger right"><div class="string"></div><div class="pan" id="pan-right"></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="ops" id="scale-ops"></div>
+      <div class="scale-log" id="scale-log" aria-live="polite">👆 点上面的按钮操作天平。蓝色方块是未知数 <span class="math"><i>x</i></span>,黄色圆片是重 1 的砝码。</div>
+      <div class="win-banner" id="scale-win" hidden></div>
+    </section>
+
+    <!-- ③ 分步 -->
+    <section id="tab-steps" hidden>
+      <h2>步步为营:每一步都选对</h2>
+      <p class="lede">解方程的固定套路:<b>去分母 → 去括号 → 移项 → 合并同类项 → 系数化为 1</b>。每一步都有陷阱选项,选错了会告诉你错在哪——这正是考试最爱挖的坑。</p>
+      <div class="tag">第 <span id="st-no">1</span> / <span id="st-total">4</span> 题</div>
+      <div class="steps-layout">
+        <div>
+          <p class="step-eq math" id="st-eq"></p>
+          <p class="step-prompt" id="st-prompt"></p>
+          <div class="choices" id="st-choices"></div>
+          <div id="st-done"></div>
+        </div>
+        <aside class="ledger">
+          <h3>解题过程</h3>
+          <ol class="math" id="st-ledger"></ol>
+        </aside>
+      </div>
+      <div class="step-nav">
+        <button class="btn ghost" id="st-restart">重做本题</button>
+        <button class="btn" id="st-next" disabled>下一题 →</button>
+      </div>
+    </section>
+
+    <!-- ④ 闯关 -->
+    <section id="tab-quiz" hidden>
+      <h2>闯关挑战</h2>
+      <p class="lede">每关连续答对 <b>8</b> 题即可通关。答错不要紧——会立刻给出完整解法,看懂再战!</p>
+      <div class="levels" id="quiz-levels"></div>
+      <div class="scorebar">
+        <span>本关进度 <b id="qz-prog">0</b>/8</span>
+        <span>当前连对 <b id="qz-streak">0</b></span>
+        <span>历史最佳连对 <b id="qz-best">0</b></span>
+      </div>
+      <div class="quiz-card">
+        <div class="tag" id="qz-lvname"></div>
+        <div style="margin:14px 0 2px"><span class="math" id="qz-expr"></span></div>
+        <div class="answer-row">
+          <span class="math"><i>x</i> =</span>
+          <input id="qz-input" inputmode="numeric" autocomplete="off" aria-label="输入 x 的值">
+          <button class="btn" id="qz-submit">提交</button>
+        </div>
+        <div class="quiz-fb" id="qz-fb" aria-live="polite"></div>
+        <div id="qz-pass"></div>
+      </div>
+    </section>
+  </main>
+  <footer>建议每天练一关 · 错题看完解法后,隔天再重做一遍效果最好</footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var M = "−"; // 数学负号
+
+  /* 把 "3x + 5 = 20" 渲染成带斜体 x 的 HTML */
+  function mathHTML(s) {
+    return s.replace(/-/g, M).replace(/x/g, "<i>x</i>");
+  }
+
+  /* ============ 标签页 ============ */
+  var tabs = document.querySelectorAll("nav [role=tab]");
+  tabs.forEach(function (t) {
+    t.addEventListener("click", function () {
+      tabs.forEach(function (o) { o.setAttribute("aria-selected", o === t ? "true" : "false"); });
+      ["concept", "scale", "steps", "quiz"].forEach(function (name) {
+        $("tab-" + name).hidden = name !== t.dataset.tab;
+      });
+    });
+  });
+
+  /* ============ ① 认一认:判断题 ============ */
+  var judgeItems = [
+    { e: "2x + 1 = 5",  yes: true,  why: "只有 1 个未知数,次数是 1,还是等式——三条全中!" },
+    { e: "x² - 1 = 0",  yes: false, why: "x 的次数是 2,这是「一元二次方程」(初三才学)。" },
+    { e: "x + y = 6",   yes: false, why: "有 x 和 y 两个未知数,是「二元」不是「一元」。" },
+    { e: "3x - 6",      yes: false, why: "没有等号!它只是一个代数式,不是方程。" },
+    { e: "1/x = 2",     yes: false, why: "未知数 x 跑到了分母上,不是整式方程。" },
+    { e: "(x - 1)/2 = 3", yes: true, why: "分母上只是数字 2,x 还在分子上,完全符合。" },
+    { e: "0.5x = 4",    yes: true,  why: "系数可以是小数,不影响——它就是一元一次方程。" },
+    { e: "3 + 5 = 8",   yes: false, why: "这是一个普通等式,连未知数都没有,谈不上方程。" }
+  ];
+  var jdIdx = 0, jdScore = 0;
+  function jdShow() {
+    $("jd-no").textContent = jdIdx + 1;
+    $("jd-expr").innerHTML = mathHTML(judgeItems[jdIdx].e);
+    $("jd-fb").innerHTML = "";
+    $("jd-yes").disabled = $("jd-not").disabled = false;
+  }
+  function jdAnswer(saysYes) {
+    var it = judgeItems[jdIdx];
+    var right = saysYes === it.yes;
+    if (right) jdScore++;
+    $("jd-yes").disabled = $("jd-not").disabled = true;
+    var mark = right
+      ? '<span class="mark note-ok">✓ 答对了!</span>'
+      : '<span class="mark note-bad">✗ 再想想——</span>';
+    $("jd-fb").innerHTML = mark + " " + it.why;
+    jdIdx++;
+    setTimeout(function () {
+      if (jdIdx < judgeItems.length) { jdShow(); }
+      else {
+        $("jd-expr").textContent = "🎉";
+        $("jd-fb").innerHTML = "全部完成!答对 <b>" + jdScore + " / " + judgeItems.length +
+          "</b> 题。" + (jdScore === judgeItems.length ? "满分,火眼金睛!" : "把上面三条口诀再读一遍,点下方重来。") +
+          ' <br><button class="btn ghost" style="margin-top:10px" id="jd-again">重新来一轮</button>';
+        $("jd-again").addEventListener("click", function () { jdIdx = 0; jdScore = 0; jdShow(); });
+      }
+    }, right ? 1400 : 3200);
+  }
+  $("jd-yes").addEventListener("click", function () { jdAnswer(true); });
+  $("jd-not").addEventListener("click", function () { jdAnswer(false); });
+  jdShow();
+
+  /* ============ ② 天平 ============ */
+  var scalePresets = [
+    { label: "第 1 题:x + 3 = 7",      s: { xl: 1, ul: 3, xr: 0, ur: 7 } },
+    { label: "第 2 题:2x + 1 = 9",     s: { xl: 2, ul: 1, xr: 0, ur: 9 } },
+    { label: "第 3 题:3x + 2 = 2x + 6", s: { xl: 3, ul: 2, xr: 2, ur: 6 } }
+  ];
+  var sc = null, scBusy = false;
+
+  function sideText(x, u) {
+    var parts = [];
+    if (x === 1) parts.push("x");
+    else if (x > 1) parts.push(x + "x");
+    if (u > 0) parts.push(u);
+    return parts.length ? parts.join(" + ") : "0";
+  }
+  function chips(x, u) {
+    var h = "";
+    for (var i = 0; i < x; i++) h += '<span class="chip x">x</span>';
+    for (var j = 0; j < u; j++) h += '<span class="chip u">1</span>';
+    return h;
+  }
+  function scRender() {
+    $("pan-left").innerHTML = chips(sc.xl, sc.ul);
+    $("pan-right").innerHTML = chips(sc.xr, sc.ur);
+    $("scale-eq").innerHTML = mathHTML(sideText(sc.xl, sc.ul) + " = " + sideText(sc.xr, sc.ur));
+    var solved = sc.xl === 1 && sc.ul === 0 && sc.xr === 0;
+    $("scale-win").hidden = !solved;
+    if (solved) {
+      $("scale-win").innerHTML = "🎉 解出来了!x = " + sc.ur +
+        " —— 你刚才做的每一步,就是解方程的「移项」和「系数化为 1」!";
+    }
+    scOpsRender(solved);
+  }
+  function scLog(msg, kind) {
+    var el = $("scale-log");
+    el.innerHTML = msg;
+    el.className = "scale-log" + (kind ? " " + kind : "");
+  }
+  function scOpsRender(solved) {
+    var ops = [
+      { id: "u", label: "两边各拿走 1 个砝码", ok: sc.ul > 0 && sc.ur > 0 },
+      { id: "x", label: "两边各拿走 1 个 x", ok: sc.xl > 0 && sc.xr > 0 },
+      { id: "half", label: "两边平分(÷2)", ok: sc.xl % 2 === 0 && sc.ul % 2 === 0 && sc.xr % 2 === 0 && sc.ur % 2 === 0 && (sc.xl + sc.ul) > 0 },
+      { id: "bad", label: "只从左边拿 1 个砝码(试试看?)", ok: sc.ul > 0, naughty: true },
+      { id: "reset", label: "↺ 重置", ok: true, ghost: true }
+    ];
+    var box = $("scale-ops");
+    box.innerHTML = "";
+    ops.forEach(function (op) {
+      if (solved && op.id !== "reset") return;
+      var b = document.createElement("button");
+      b.className = "btn" + (op.naughty ? " naughty" : "") + (op.ghost ? " ghost" : "");
+      b.textContent = op.label;
+      b.disabled = !op.ok || scBusy;
+      b.addEventListener("click", function () { scDo(op.id); });
+      box.appendChild(b);
+    });
+  }
+  function scDo(id) {
+    if (scBusy) return;
+    if (id === "reset") { scLoad(sc.preset); return; }
+    if (id === "u") {
+      sc.ul--; sc.ur--;
+      scLog('<span class="note-ok">✓ 天平依然平衡!</span>等式两边同时减 1,等式仍然成立——这就是「移项」的原理。', "good");
+      scRender();
+    } else if (id === "x") {
+      sc.xl--; sc.xr--;
+      scLog('<span class="note-ok">✓ 天平依然平衡!</span>两边同时减去一个 x,含 x 的项也可以移项。', "good");
+      scRender();
+    } else if (id === "half") {
+      sc.xl /= 2; sc.ul /= 2; sc.xr /= 2; sc.ur /= 2;
+      scLog('<span class="note-ok">✓ 天平依然平衡!</span>两边同时除以 2,等式仍然成立——这就是「系数化为 1」的原理。', "good");
+      scRender();
+    } else if (id === "bad") {
+      scBusy = true;
+      sc.ul--;
+      $("pan-left").innerHTML = chips(sc.xl, sc.ul);
+      $("scale").style.setProperty("--tilt", "5deg");
+      $("scale-eq").classList.add("shake");
+      scLog('<span class="note-bad">✗ 天平立刻歪了!</span>只动一边,两边就不再相等。所以变形时必须<b>两边同时</b>做同样的事——先把砝码放回去。', "bad");
+      scOpsRender(false);
+      setTimeout(function () {
+        sc.ul++;
+        $("scale").style.setProperty("--tilt", "0deg");
+        $("scale-eq").classList.remove("shake");
+        scBusy = false;
+        scRender();
+      }, 2000);
+    }
+  }
+  function scLoad(i) {
+    var p = scalePresets[i];
+    sc = { xl: p.s.xl, ul: p.s.ul, xr: p.s.xr, ur: p.s.ur, preset: i };
+    $("scale").style.setProperty("--tilt", "0deg");
+    scLog("目标:让蓝色的 x 单独留在一边。想想先拿走什么?", "");
+    scRender();
+    document.querySelectorAll("#scale-presets .btn").forEach(function (b, j) {
+      b.className = "btn" + (j === i ? "" : " ghost");
+    });
+  }
+  scalePresets.forEach(function (p, i) {
+    var b = document.createElement("button");
+    b.className = "btn ghost";
+    b.innerHTML = mathHTML(p.label);
+    b.addEventListener("click", function () { scLoad(i); });
+    $("scale-presets").appendChild(b);
+  });
+  scLoad(0);
+
+  /* ============ ③ 步步为营 ============ */
+  var stepProblems = [
+    {
+      eq: "3x + 5 = 20",
+      steps: [
+        { prompt: "第一步:移项(把 +5 移到右边)", choices: [
+          { t: "3x = 20 - 5", ok: true,  n: "移项要变号:+5 过了等号变成 −5。" },
+          { t: "3x = 20 + 5", n: "移项要变号!+5 移到右边应变成 −5。" },
+          { t: "x = 20 - 5 - 3", n: "3 是系数,不能用减法移走,最后要用除法。" }
+        ]},
+        { prompt: "第二步:计算右边", choices: [
+          { t: "3x = 15", ok: true, n: "20 − 5 = 15,左边的 3x 保持不动。" },
+          { t: "x = 15",  n: "别忘了左边还有系数 3,它还没处理呢。" },
+          { t: "3x = 25", n: "20 − 5 = 15,再算一遍。" }
+        ]},
+        { prompt: "第三步:系数化为 1", choices: [
+          { t: "x = 5", ok: true, n: "两边同除以 3:15 ÷ 3 = 5。" },
+          { t: "x = 15 - 3 = 12", n: "系数化为 1 要用除法,不是减法!" },
+          { t: "x = 3 ÷ 15", n: "除反了!应该是 15 ÷ 3。" }
+        ]}
+      ]
+    },
+    {
+      eq: "2(x - 3) = 10",
+      steps: [
+        { prompt: "第一步:去括号", choices: [
+          { t: "2x - 6 = 10", ok: true, n: "2 要乘括号里的每一项:2·x 和 2·(−3)。" },
+          { t: "2x - 3 = 10", n: "漏乘了!2 也要乘 −3,得 −6。这是最常见的失分点。" },
+          { t: "2x + 6 = 10", n: "注意符号:2 × (−3) = −6,不是 +6。" }
+        ]},
+        { prompt: "第二步:移项", choices: [
+          { t: "2x = 10 + 6", ok: true, n: "−6 移到右边变成 +6。" },
+          { t: "2x = 10 - 6", n: "−6 过了等号要变号,应该变成 +6。" }
+        ]},
+        { prompt: "第三步:合并并系数化为 1", choices: [
+          { t: "x = 8", ok: true, n: "2x = 16,两边同除以 2 得 x = 8。" },
+          { t: "x = 16 - 2 = 14", n: "又想用减法?系数化为 1 必须用除法。" },
+          { t: "x = 4", n: "16 ÷ 2 = 8,再算一下。" }
+        ]}
+      ]
+    },
+    {
+      eq: "5x - 2 = 3x + 6",
+      steps: [
+        { prompt: "第一步:移项(x 归左,常数归右)", choices: [
+          { t: "5x - 3x = 6 + 2", ok: true, n: "3x 左移变 −3x,−2 右移变 +2,两个都要变号。" },
+          { t: "5x - 3x = 6 - 2", n: "−2 移到右边要变成 +2。" },
+          { t: "5x + 3x = 6 + 2", n: "3x 移到左边要变成 −3x。" }
+        ]},
+        { prompt: "第二步:合并同类项", choices: [
+          { t: "2x = 8", ok: true, n: "5x − 3x = 2x,6 + 2 = 8。" },
+          { t: "8x = 8", n: "5x − 3x 是 2x:系数相减,x 不变。" },
+          { t: "2x = 4", n: "右边是 6 + 2 = 8。" }
+        ]},
+        { prompt: "第三步:系数化为 1", choices: [
+          { t: "x = 4", ok: true, n: "8 ÷ 2 = 4。" },
+          { t: "x = 8 - 2 = 6", n: "除法,不是减法!" },
+          { t: "x = 2 ÷ 8", n: "除反了,是 8 ÷ 2。" }
+        ]}
+      ]
+    },
+    {
+      eq: "(x + 1)/2 = (2x - 1)/3",
+      steps: [
+        { prompt: "第一步:去分母(两边同乘 6)", choices: [
+          { t: "3(x + 1) = 2(2x - 1)", ok: true, n: "6÷2=3、6÷3=2,记得给整个分子加括号!" },
+          { t: "3(x + 1) = 2x - 1", n: "右边也要乘!6 ÷ 3 = 2,右边应变成 2(2x − 1)。" },
+          { t: "x + 1 = 2x - 1", n: "去分母要两边同乘分母的最小公倍数 6,不能直接把分母划掉。" }
+        ]},
+        { prompt: "第二步:去括号", choices: [
+          { t: "3x + 3 = 4x - 2", ok: true, n: "3 和 2 都要乘到括号里的每一项。" },
+          { t: "3x + 1 = 4x - 1", n: "漏乘了常数项:3×1=3,2×(−1)=−2。" },
+          { t: "3x + 3 = 4x - 1", n: "右边:2 × (−1) = −2。" }
+        ]},
+        { prompt: "第三步:移项、合并", choices: [
+          { t: "-x = -5", ok: true, n: "3x − 4x = −x,−2 − 3 = −5。" },
+          { t: "x = -5", n: "3x − 4x = −x,负号不能丢。" },
+          { t: "-x = -1", n: "常数:−2 − 3 = −5。" }
+        ]},
+        { prompt: "第四步:系数化为 1", choices: [
+          { t: "x = 5", ok: true, n: "两边同除以 −1,负负得正。" },
+          { t: "x = -5", n: "两边同除以 −1 时,右边 −5 也要变号,得 +5。" }
+        ]}
+      ]
+    }
+  ];
+  var stP = 0, stS = 0;
+  function stShow() {
+    var p = stepProblems[stP];
+    $("st-no").textContent = stP + 1;
+    $("st-total").textContent = stepProblems.length;
+    $("st-eq").innerHTML = "解方程:" + mathHTML(p.eq);
+    $("st-done").innerHTML = "";
+    $("st-next").disabled = true;
+    var led = $("st-ledger");
+    led.innerHTML = "<li>" + mathHTML(p.eq) + "</li>";
+    stStep();
+  }
+  function stStep() {
+    var p = stepProblems[stP];
+    if (stS >= p.steps.length) {
+      $("st-prompt").textContent = "";
+      $("st-choices").innerHTML = "";
+      $("st-done").innerHTML = '<div class="step-done">✓ 完整解出!养成好习惯:把 x 的值代回原方程,两边相等才算真的对。</div>';
+      $("st-next").disabled = stP + 1 >= stepProblems.length;
+      if (stP + 1 >= stepProblems.length) {
+        $("st-done").innerHTML += '<div class="step-done" style="margin-top:10px">🎉 四道题全部完成!去「④ 闯关挑战」独立练兵吧。</div>';
+      }
+      return;
+    }
+    var step = p.steps[stS];
+    $("st-prompt").textContent = step.prompt;
+    var box = $("st-choices");
+    box.innerHTML = "";
+    var order = step.choices.map(function (_, i) { return i; }).sort(function () { return Math.random() - 0.5; });
+    order.forEach(function (ci) {
+      var c = step.choices[ci];
+      var b = document.createElement("button");
+      b.className = "choice math";
+      b.innerHTML = mathHTML(c.t);
+      b.addEventListener("click", function () {
+        if (c.ok) {
+          b.className = "choice math right";
+          b.innerHTML = mathHTML(c.t) + "<small>✓ " + c.n + "</small>";
+          box.querySelectorAll(".choice").forEach(function (x) { x.disabled = true; });
+          var li = document.createElement("li");
+          li.innerHTML = mathHTML(c.t);
+          $("st-ledger").appendChild(li);
+          stS++;
+          setTimeout(stStep, 1200);
+        } else {
+          b.className = "choice math wrong";
+          b.innerHTML = mathHTML(c.t) + "<small>✗ " + c.n + "</small>";
+          b.disabled = true;
+        }
+      });
+      box.appendChild(b);
+    });
+  }
+  $("st-restart").addEventListener("click", function () { stS = 0; stShow(); });
+  $("st-next").addEventListener("click", function () {
+    if (stP + 1 < stepProblems.length) { stP++; stS = 0; stShow(); }
+  });
+  stShow();
+
+  /* ============ ④ 闯关挑战 ============ */
+  function ri(lo, hi) { return lo + Math.floor(Math.random() * (hi - lo + 1)); }
+  function pick(arr) { return arr[ri(0, arr.length - 1)]; }
+  function signed(n) { return n < 0 ? "- " + (-n) : "+ " + n; }
+
+  var levels = [
+    { name: "第一关 · 一步到位", gen: function () {
+      var kind = pick(["add", "sub", "mul"]);
+      if (kind === "add") {
+        var a = ri(2, 9), x = ri(1, 12), b = x + a;
+        return { eq: "x + " + a + " = " + b, ans: x, sol: [
+          ["x = " + b + " - " + a, "把 +" + a + " 移到右边,变号成 −" + a],
+          ["x = " + x, ""]
+        ]};
+      }
+      if (kind === "sub") {
+        var a2 = ri(1, 9), x2 = ri(a2 + 1, 12), b2 = x2 - a2;
+        return { eq: "x - " + a2 + " = " + b2, ans: x2, sol: [
+          ["x = " + b2 + " + " + a2, "把 −" + a2 + " 移到右边,变号成 +" + a2],
+          ["x = " + x2, ""]
+        ]};
+      }
+      var a3 = ri(2, 9), x3 = ri(2, 9), b3 = a3 * x3;
+      return { eq: a3 + "x = " + b3, ans: x3, sol: [
+        ["x = " + b3 + " ÷ " + a3, "两边同除以系数 " + a3],
+        ["x = " + x3, ""]
+      ]};
+    }},
+    { name: "第二关 · 两步走", gen: function () {
+      var kind = pick(["axb", "axmb", "paren"]);
+      if (kind === "paren") {
+        var a = ri(2, 5), b = ri(1, 5), x = ri(1, 9), c = a * (x + b);
+        return { eq: a + "(x + " + b + ") = " + c, ans: x, sol: [
+          [a + "x + " + (a * b) + " = " + c, "去括号:" + a + " 要乘括号里的每一项"],
+          [a + "x = " + c + " - " + (a * b) + " = " + (a * x), "移项,变号"],
+          ["x = " + x, "两边同除以 " + a]
+        ]};
+      }
+      var a4 = ri(2, 9), b4 = ri(1, 9), x4 = ri(1, 9);
+      if (kind === "axb") {
+        var c4 = a4 * x4 + b4;
+        return { eq: a4 + "x + " + b4 + " = " + c4, ans: x4, sol: [
+          [a4 + "x = " + c4 + " - " + b4 + " = " + (a4 * x4), "移项:+" + b4 + " 过等号变 −" + b4],
+          ["x = " + (a4 * x4) + " ÷ " + a4 + " = " + x4, "系数化为 1"]
+        ]};
+      }
+      var c5 = a4 * x4 - b4;
+      return { eq: a4 + "x - " + b4 + " = " + c5, ans: x4, sol: [
+        [a4 + "x = " + c5 + " + " + b4 + " = " + (a4 * x4), "移项:−" + b4 + " 过等号变 +" + b4],
+        ["x = " + (a4 * x4) + " ÷ " + a4 + " = " + x4, "系数化为 1"]
+      ]};
+    }},
+    { name: "第三关 · 两边都有 x", gen: function () {
+      var a = ri(4, 9), c = ri(2, a - 2), x = pick([1, 1, 1, -1]) * ri(1, 9);
+      var b = ri(1, 9), d = (a - c) * x + b;
+      if (d === 0) { b++; d = 1; }
+      var eq = a + "x " + signed(b) + " = " + c + "x " + signed(d);
+      return { eq: eq, ans: x, sol: [
+        [a + "x - " + c + "x = " + d + " " + signed(-b), "x 归左、常数归右,移项都要变号"],
+        [(a - c) + "x = " + (d - b), "合并同类项"],
+        ["x = " + x, "两边同除以 " + (a - c)]
+      ]};
+    }}
+  ];
+  var qzLevel = 0, qzStreak = 0, qzProg = 0, qzCur = null, qzAnswered = false;
+  var qzBest = 0;
+  try { qzBest = parseInt(localStorage.getItem("eq_best_streak") || "0", 10) || 0; } catch (e) {}
+
+  function qzLevelButtons() {
+    var box = $("quiz-levels");
+    box.innerHTML = "";
+    levels.forEach(function (lv, i) {
+      var b = document.createElement("button");
+      b.className = "btn" + (i === qzLevel ? "" : " ghost");
+      b.textContent = lv.name;
+      b.addEventListener("click", function () {
+        qzLevel = i; qzProg = 0; qzLevelButtons(); qzNext();
+      });
+      box.appendChild(b);
+    });
+  }
+  function qzStats() {
+    $("qz-prog").textContent = qzProg;
+    $("qz-streak").textContent = qzStreak;
+    $("qz-best").textContent = qzBest;
+  }
+  function qzNext() {
+    qzCur = levels[qzLevel].gen();
+    qzAnswered = false;
+    $("qz-lvname").textContent = levels[qzLevel].name;
+    $("qz-expr").innerHTML = "解方程:" + mathHTML(qzCur.eq);
+    $("qz-input").value = "";
+    $("qz-fb").innerHTML = "";
+    $("qz-pass").innerHTML = "";
+    $("qz-submit").textContent = "提交";
+    qzStats();
+    $("qz-input").focus();
+  }
+  function qzCheck() {
+    if (qzAnswered) { qzNext(); return; }
+    var raw = $("qz-input").value.trim().replace(/−/g, "-");
+    if (raw === "" || isNaN(Number(raw))) {
+      $("qz-fb").innerHTML = '<span class="note-bad">请输入一个数字(负数写成 -3 这样)。</span>';
+      return;
+    }
+    qzAnswered = true;
+    $("qz-submit").textContent = "下一题 →";
+    var val = Number(raw);
+    if (val === qzCur.ans) {
+      qzStreak++; qzProg++;
+      if (qzStreak > qzBest) {
+        qzBest = qzStreak;
+        try { localStorage.setItem("eq_best_streak", String(qzBest)); } catch (e) {}
+      }
+      var praise = pick(["漂亮!", "完全正确!", "稳!", "就是这么解!", "又对一题!"]);
+      $("qz-fb").innerHTML = '<span class="mark note-ok">✓</span> ' + praise;
+      if (qzProg >= 8) {
+        $("qz-pass").innerHTML = '<div class="pass-banner">🏆 恭喜通关!' +
+          (qzLevel + 1 < levels.length ? "去挑战「" + levels[qzLevel + 1].name + "」吧!" : "三关全部通关,一元一次方程稳稳拿下!") + "</div>";
+        qzProg = 0;
+        if (qzLevel + 1 < levels.length) { qzLevel++; qzLevelButtons(); }
+      }
+    } else {
+      qzStreak = 0; qzProg = 0;
+      var html = '<span class="mark note-bad">✗</span> 正确答案是 <b class="math">x = ' +
+        String(qzCur.ans).replace(/-/g, M) + "</b>,看看完整解法:" + '<div class="solution math">';
+      html += "<p>" + mathHTML(qzCur.eq) + "</p>";
+      qzCur.sol.forEach(function (line) {
+        html += "<p>" + mathHTML(line[0]) +
+          (line[1] ? ' <span class="why">(' + line[1] + ")</span>" : "") + "</p>";
+      });
+      html += "</div>";
+      $("qz-fb").innerHTML = html;
+    }
+    qzStats();
+  }
+  $("qz-submit").addEventListener("click", qzCheck);
+  $("qz-input").addEventListener("keydown", function (ev) {
+    if (ev.key === "Enter") qzCheck();
+  });
+  qzLevelButtons();
+  qzNext();
+})();
+</script>
+
+</body>
+</html>
