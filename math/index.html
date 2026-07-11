@@ -188,6 +188,37 @@
 
   .mfoot { display: flex; gap: 10px; justify-content: space-between; margin-top: 18px; flex-wrap: wrap; }
   footer.pagefoot { margin-top: 30px; font-size: 12.5px; color: var(--muted); text-align: center; }
+
+  /* ---------- 复习区 / 错题本 ---------- */
+  .reviewrow { display: flex; gap: 12px; flex-wrap: wrap; margin: 16px 0 4px; }
+  .reviewcard {
+    flex: 1 1 240px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 14px 16px; cursor: pointer;
+    transition: transform .12s, box-shadow .12s;
+  }
+  .reviewcard:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.10); }
+  .reviewcard h3 { margin: 0 0 4px; font-size: 15px; }
+  .reviewcard p { margin: 0; font-size: 12.5px; color: var(--sub); }
+  .remind { border-left: 4px solid var(--warn); }
+  .srcchip {
+    display: inline-block; font-size: 11.5px; font-weight: 400; color: var(--muted);
+    background: var(--page); border: 1px solid var(--border); border-radius: 20px;
+    padding: 1px 9px; margin-left: 8px; vertical-align: 2px;
+  }
+  .wrong-item { border-top: 1px solid var(--grid); padding: 10px 2px; font-size: 14px; }
+  .wrong-item:first-child { border-top: none; }
+  .wrong-item .wmeta { font-size: 12px; color: var(--muted); margin-top: 3px; }
+
+  /* ---------- 撒花 ---------- */
+  .confetti { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 50; }
+  .confetti i {
+    position: absolute; top: -16px; width: 9px; height: 14px; border-radius: 2px;
+    animation: confall linear forwards;
+  }
+  @keyframes confall {
+    0% { opacity: 1; }
+    100% { transform: translateY(105vh) rotate(660deg); opacity: 0.85; }
+  }
 </style>
 </head>
 <body>
@@ -218,9 +249,48 @@
       cur.attempts++;
       cur.best = Math.max(cur.best, pct);
       cur.mastered = cur.best >= 80;
+      cur.last = Date.now();
       d[id] = cur;
       try { localStorage.setItem(this.KEY, JSON.stringify(d)); } catch (e) {}
     },
+    // 复习后刷新"最近见面"时间（不影响成绩）
+    touch(id) {
+      const d = this.load();
+      if (d[id]) { d[id].last = Date.now(); try { localStorage.setItem(this.KEY, JSON.stringify(d)); } catch (e) {} }
+    },
+    // 间隔复习：掌握超过 7 天未再测 → 提醒复习（记忆的遗忘曲线）
+    needsReview(id) {
+      const p = this.get(id);
+      return !!(p && p.mastered && p.last && Date.now() - p.last > 7 * 864e5);
+    },
+  };
+
+  /* ---------- 错题本 ---------- */
+  const WrongBook = {
+    KEY: "mathlab-wrongbook-v1",
+    load() {
+      try { return JSON.parse(localStorage.getItem(this.KEY)) || []; }
+      catch (e) { return []; }
+    },
+    save(list) { try { localStorage.setItem(this.KEY, JSON.stringify(list)); } catch (e) {} },
+    add(modId, qi) {
+      const list = this.load();
+      const hit = list.find(e => e.m === modId && e.q === qi);
+      if (hit) { hit.n++; hit.ts = Date.now(); }
+      else list.push({ m: modId, q: qi, n: 1, ts: Date.now() });
+      this.save(list);
+    },
+    clear(modId, qi) {
+      this.save(this.load().filter(e => !(e.m === modId && e.q === qi)));
+    },
+    // 只返回仍然有效的条目（模块和题目都存在）
+    list() {
+      return this.load().filter(e => {
+        const m = MathLab.modules.find(x => x.id === e.m);
+        return m && m.quiz[e.q];
+      });
+    },
+    count() { return this.list().length; },
   };
 
   /* ---------- 主题 ---------- */
@@ -336,35 +406,58 @@
     const v = parseFloat(str);
     return Number.isNaN(v) ? null : v;
   }
-  function renderQuiz(container, mod) {
+  /* 撒花庆祝 */
+  function confetti() {
+    const colors = ["--c1", "--c2", "--c3", "--c5", "--c6", "--c8"];
+    const box = el("div", { class: "confetti" });
+    for (let i = 0; i < 44; i++) {
+      const s = el("i");
+      s.style.left = Math.random() * 100 + "%";
+      s.style.background = `var(${colors[i % colors.length]})`;
+      s.style.animationDelay = Math.random() * 0.7 + "s";
+      s.style.animationDuration = 1.7 + Math.random() * 1.3 + "s";
+      s.style.transform = `rotate(${Math.random() * 360}deg)`;
+      box.appendChild(s);
+    }
+    document.body.appendChild(box);
+    setTimeout(() => box.remove(), 3400);
+  }
+
+  /* 通用测验引擎
+     src = {
+       items: [{mod, qi}]     题目来源（模块对象 + 题号）
+       recordId               记入进度存档的模块 id（null 则不记）
+       infoHtml / startLabel  开始界面文案
+       showSource             题干旁标注来源模块
+       endMsg(pct)            自定义结算文案（可选）
+       onDone(pct)            结算回调（可选）
+     } */
+  function renderQuiz(container, src) {
     container.innerHTML = "";
-    const prog = Store.get(mod.id);
-    const info = prog
-      ? `共 ${mod.quiz.length} 题 · 历史最好成绩 <b>${prog.best}%</b>${prog.mastered ? " · ✅ 已掌握" : ""} · 答对 80% 即为掌握`
-      : `共 ${mod.quiz.length} 题 · 答对 80% 即为掌握 · 答错会告诉你"为什么"`;
-    const startBox = el("div", { class: "quiz-start" },
-      el("div", { class: "info", html: info }),
-      button("🚀 开始闯关", () => start(), true),
-    );
-    container.appendChild(startBox);
+    container.appendChild(el("div", { class: "quiz-start" },
+      el("div", { class: "info", html: src.infoHtml || `共 ${src.items.length} 题 · 答对 80% 即为掌握` }),
+      button(src.startLabel || "🚀 开始闯关", () => start(), true),
+    ));
 
     function start() {
       container.innerHTML = "";
-      const order = shuffle(mod.quiz.map((_, i) => i));
+      const order = shuffle(src.items.slice());
       const results = new Array(order.length).fill(null); // true/false
-      let idx = 0;
+      let idx = 0, consec = 0;
       next();
 
       function next() {
         container.innerHTML = "";
         if (idx >= order.length) return finish();
-        const q = mod.quiz[order[idx]];
+        const item = order[idx];
+        const q = item.mod.quiz[item.qi];
         const bar = el("div", { class: "qprogress" },
           ...order.map((_, i) => el("i", {
             class: results[i] === true ? "right" : results[i] === false ? "wrong" : i === idx ? "cur" : "",
           })));
         container.appendChild(bar);
-        container.appendChild(el("div", { class: "qtext", html: `<b>第 ${idx + 1} 题</b> · ${q.q}` }));
+        const srcChip = src.showSource ? `<span class="srcchip">${item.mod.emoji} ${item.mod.title}</span>` : "";
+        container.appendChild(el("div", { class: "qtext", html: `<b>第 ${idx + 1} 题</b>${srcChip} · ${q.q}` }));
         const zone = el("div");
         container.appendChild(zone);
 
@@ -376,7 +469,7 @@
             let right = false;
             if (q.accept && q.accept.includes(input.value.trim())) right = true;
             else if (v !== null) right = Math.abs(v - q.answer) <= (q.tol ?? 1e-6);
-            settle(right, zone, q);
+            settle(right, zone, q, item);
             input.disabled = true; ok.disabled = true;
           }, true);
           input.addEventListener("keydown", e => { if (e.key === "Enter") ok.click(); });
@@ -391,18 +484,23 @@
               const right = oi === q.answer;
               b.className = "opt " + (right ? "sel-right" : "sel-wrong");
               if (!right) btns[seq.indexOf(q.answer)].classList.add("show-right");
-              settle(right, zone, q);
+              settle(right, zone, q, item);
             });
             return b;
           });
           zone.appendChild(el("div", { class: "opts" }, ...btns));
         }
 
-        function settle(right, zone, q) {
+        function settle(right, zone, q, item) {
           results[idx] = right;
           bar.children[idx].className = right ? "right" : "wrong";
+          if (right) { consec++; WrongBook.clear(item.mod.id, item.qi); }
+          else { consec = 0; WrongBook.add(item.mod.id, item.qi); }
+          const head = right
+            ? "✅ 答对了！" + (consec >= 3 ? ` 🔥 连对 ${consec} 题！` : "")
+            : "❌ 还没对——看看为什么（这道题已收进错题本）";
           zone.appendChild(el("div", { class: "fb " + (right ? "ok" : "no") },
-            el("div", { class: "head" }, right ? "✅ 答对了！" : "❌ 还没对——看看为什么"),
+            el("div", { class: "head" }, head),
             el("div", { class: "why", html: q.explain }),
           ));
           zone.appendChild(el("div", { class: "qnav" },
@@ -413,9 +511,10 @@
       function finish() {
         const right = results.filter(Boolean).length;
         const pct = Math.round(100 * right / results.length);
-        Store.record(mod.id, pct);
+        if (src.recordId) Store.record(src.recordId, pct);
         const mastered = pct >= 80;
-        const msg = mastered
+        if (mastered) confetti();
+        const msg = src.endMsg ? src.endMsg(pct) : mastered
           ? `<b>🏆 已掌握！</b>原理在手，题目只是它的化身。`
           : pct >= 60
             ? `不错的开始！回到上面的<b>实验</b>再玩一玩答错的知识点，原理想通了再来一次。`
@@ -428,6 +527,7 @@
             button("🔁 再挑战一次", () => start(), !mastered), " ",
             button("🏠 返回知识地图", () => location.hash = "#/")),
         ));
+        src.onDone && src.onDone(pct);
       }
     }
   }
@@ -461,17 +561,41 @@
     );
     app.appendChild(bar);
 
+    // 复习区：综合闯关（交叉练习）＋ 错题本
+    const attempted = mods.filter(m => Store.get(m.id));
+    const wrongN = WrongBook.count();
+    app.appendChild(el("div", { class: "reviewrow" },
+      el("div", { class: "reviewcard", onclick: () => location.hash = "#/review" },
+        el("h3", null, "🎯 综合复习闯关"),
+        el("p", null, attempted.length
+          ? `从你学过的 ${attempted.length} 个模块里随机混合抽题——交叉着练，记得最牢`
+          : "先完成任意一个模块的闯关，再来这里混合检验")),
+      el("div", { class: "reviewcard", onclick: () => location.hash = "#/wrong" },
+        el("h3", null, `📕 错题本${wrongN ? `（${wrongN} 题待清）` : ""}`),
+        el("p", null, wrongN
+          ? "答错的题都收在这里——重练答对就划掉，把它清空！"
+          : "现在是空的。闯关时答错的题会自动收进来")),
+    ));
+    const due = mods.filter(m => Store.needsReview(m.id));
+    if (due.length) {
+      app.appendChild(el("div", { class: "philosophy remind", html:
+        `⏰ <b>复习提醒</b>：${due.map(m => m.emoji + " " + m.title).join("、")} 已掌握超过一周。` +
+        `记忆和肌肉一样，隔段时间“再见一面”才会长久——点开重新闯一次关吧。` }));
+    }
+
     for (const dom of DOMAINS) {
       const list = mods.filter(m => m.domain === dom);
       if (!list.length) continue;
       app.appendChild(el("div", { class: "domain-h" }, dom));
       app.appendChild(el("div", { class: "cards" }, ...list.map(m => {
         const p = Store.get(m.id);
-        const badge = p?.mastered
-          ? el("span", { class: "badge done" }, `✓ 已掌握 ${p.best}%`)
-          : p
-            ? el("span", { class: "badge doing" }, `最好 ${p.best}%`)
-            : el("span", { class: "badge none" }, "未开始");
+        const badge = Store.needsReview(m.id)
+          ? el("span", { class: "badge doing" }, "🔁 该复习了")
+          : p?.mastered
+            ? el("span", { class: "badge done" }, `✓ 已掌握 ${p.best}%`)
+            : p
+              ? el("span", { class: "badge doing" }, `最好 ${p.best}%`)
+              : el("span", { class: "badge none" }, "未开始");
         return el("div", {
           class: "card", style: `--cc: var(--${m.color})`,
           onclick: () => location.hash = "#/m/" + m.id,
@@ -535,7 +659,14 @@
     const qbox = el("div");
     quizSec.appendChild(qbox);
     app.appendChild(quizSec);
-    renderQuiz(qbox, mod);
+    const prog = Store.get(mod.id);
+    renderQuiz(qbox, {
+      items: mod.quiz.map((_, i) => ({ mod, qi: i })),
+      recordId: mod.id,
+      infoHtml: prog
+        ? `共 ${mod.quiz.length} 题 · 历史最好成绩 <b>${prog.best}%</b>${prog.mastered ? " · ✅ 已掌握" : ""} · 答对 80% 即为掌握`
+        : `共 ${mod.quiz.length} 题 · 答对 80% 即为掌握 · 答错会告诉你"为什么"`,
+    });
 
     const mods = MathLab.modules;
     const i = mods.indexOf(mod);
@@ -545,9 +676,119 @@
     ));
   }
 
+  function pageShell(title, subtitle) {
+    const app = $app();
+    app.innerHTML = "";
+    scrollTo(0, 0);
+    app.appendChild(el("div", { class: "topbar" },
+      el("button", { class: "back", onclick: () => location.hash = "#/" }, "← 知识地图"),
+      el("div", { class: "spacer" }),
+      el("button", { class: "theme-btn", onclick: toggleTheme }, "🌗 主题"),
+    ));
+    app.appendChild(el("div", { class: "mhead" },
+      el("h1", null, title),
+      el("div", { class: "sub" }, subtitle),
+    ));
+    return app;
+  }
+
+  /* ---------- 综合复习闯关（交叉练习） ---------- */
+  function renderReview() {
+    document.documentElement.style.setProperty("--mod", "var(--c1)");
+    const app = pageShell("🎯 综合复习闯关", "从学过的模块里随机混合抽题。交叉着练比一个模块刷到底更防遗忘——大脑每道题都要先想“这是哪类问题”，这正是考试和真实世界的样子。");
+    const attempted = MathLab.modules.filter(m => Store.get(m.id));
+    const sec = el("div", { class: "sec" });
+    app.appendChild(sec);
+    if (!attempted.length) {
+      sec.appendChild(el("p", null, "还没有学过的模块。先去完成任意一个模块的闯关，再来这里混合检验。"));
+      sec.appendChild(button("🏠 返回知识地图", () => location.hash = "#/", true));
+      return;
+    }
+    // 轮流从每个学过的模块抽题，直到 10 道（保证覆盖面）
+    const per = attempted.map(m => shuffle(m.quiz.map((_, i) => ({ mod: m, qi: i }))));
+    const want = Math.min(10, per.reduce((s, b) => s + b.length, 0));
+    const items = [];
+    for (let r = 0; items.length < want; r++) {
+      const bucket = per[r % per.length];
+      if (bucket.length) items.push(bucket.pop());
+    }
+    const due = attempted.filter(m => Store.needsReview(m.id));
+    const qbox = el("div");
+    sec.appendChild(qbox);
+    renderQuiz(qbox, {
+      items: shuffle(items),
+      recordId: null,
+      showSource: true,
+      startLabel: "🎯 开始混合闯关",
+      infoHtml: `本次从 <b>${attempted.length}</b> 个学过的模块中抽出 <b>${items.length}</b> 题` +
+        (due.length ? `（包含该复习的：${due.map(m => m.title).join("、")}）` : "") +
+        ` · 每次抽题都不一样`,
+      endMsg: (pct) => pct >= 80
+        ? "<b>🏆 复习通过！</b>知识在混合场景下依然听你指挥——这才是真掌握。"
+        : "有些原理隔了几天变模糊了？很正常。去对应模块把实验再玩一遍，错题也在错题本等你。",
+      onDone: (pct) => { if (pct >= 80) items.forEach(it => Store.touch(it.mod.id)); },
+    });
+  }
+
+  /* ---------- 错题本 ---------- */
+  function renderWrong() {
+    document.documentElement.style.setProperty("--mod", "var(--c6)");
+    const app = pageShell("📕 错题本", "答错的题自动收在这里。重练时答对一道划掉一道——错题清零的那一刻，比一次满分更说明掌握。");
+    const entries = WrongBook.list();
+    if (!entries.length) {
+      const sec = el("div", { class: "sec" });
+      sec.appendChild(el("p", { html: "🎉 <b>错题本是空的！</b>要么你还没开始闯关，要么错过的题都被你消灭了。" }));
+      sec.appendChild(button("🏠 返回知识地图", () => location.hash = "#/", true));
+      app.appendChild(sec);
+      return;
+    }
+    // 重练区
+    const quizSec = el("div", { class: "sec" },
+      el("h2", null, "🧹 清错挑战", el("span", { class: "tag" }, "重练")));
+    const qbox = el("div");
+    quizSec.appendChild(qbox);
+    app.appendChild(quizSec);
+    const items = entries.slice(0, 15).map(e => ({
+      mod: MathLab.modules.find(x => x.id === e.m), qi: e.q,
+    }));
+    renderQuiz(qbox, {
+      items,
+      recordId: null,
+      showSource: true,
+      startLabel: "🧹 开始清错",
+      infoHtml: `共 <b>${items.length}</b> 道错题 · 答对即从错题本划掉 · 想不起来就回对应模块玩实验`,
+      endMsg: () => {
+        const left = WrongBook.count();
+        return left === 0
+          ? "<b>🏆 错题清零！</b>每一道曾经的错题，都变成了你的原理储备。"
+          : `还剩 <b>${left}</b> 道没清掉。别急——回对应模块把原理想通，比硬记答案有用得多。`;
+      },
+      onDone: () => listBox.replaceChildren(...buildList()),
+    });
+    // 错题列表
+    const listSec = el("div", { class: "sec" },
+      el("h2", null, "📋 当前错题", el("span", { class: "tag" }, `${entries.length} 题`)));
+    const listBox = el("div");
+    listSec.appendChild(listBox);
+    app.appendChild(listSec);
+    function buildList() {
+      return WrongBook.list().map(e => {
+        const m = MathLab.modules.find(x => x.id === e.m);
+        return el("div", { class: "wrong-item" },
+          el("div", { html: m.quiz[e.q].q }),
+          el("div", { class: "wmeta" }, `${m.emoji} ${m.title} · 错过 ${e.n} 次 · `,
+            el("a", { href: "#/m/" + m.id, style: "color:var(--mod)" }, "回到该模块 →")),
+        );
+      });
+    }
+    listBox.replaceChildren(...buildList());
+  }
+
   /* ---------- 路由 ---------- */
   function route() {
     const h = location.hash;
+    if (/^#\/review/.test(h)) return renderReview();
+    if (/^#\/wrong/.test(h)) return renderWrong();
     const m = h.match(/^#\/m\/([\w-]+)/);
     const mod = m && MathLab.modules.find(x => x.id === m[1]);
     if (mod) renderModule(mod);
@@ -569,9 +810,11 @@
 <script src="modules/equations.js"></script>
 <script src="modules/functions.js"></script>
 <script src="modules/quadratic.js"></script>
+<script src="modules/triangle.js"></script>
 <script src="modules/pythagoras.js"></script>
 <script src="modules/similarity.js"></script>
 <script src="modules/circle.js"></script>
+<script src="modules/stats.js"></script>
 <script src="modules/probability.js"></script>
 <script>MathLab.start();</script>
 </body>
