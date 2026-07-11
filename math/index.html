@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>初中数学 · 原理实验室</title>
+<style>
+  :root {
+    --surface: #fcfcfb; --page: #f9f9f7;
+    --ink: #0b0b0b; --sub: #52514e; --muted: #898781;
+    --grid: #e1e0d9; --baseline: #c3c2b7; --border: rgba(11,11,11,0.10);
+    --c1: #2a78d6; --c2: #1baf7a; --c3: #eda100; --c4: #008300;
+    --c5: #4a3aa7; --c6: #e34948; --c7: #e87ba4; --c8: #eb6834;
+    --good: #0ca30c; --warn: #fab219; --bad: #d03b3b;
+    --good-bg: rgba(12,163,12,0.10); --bad-bg: rgba(208,59,59,0.10);
+    --mod: var(--c1);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --surface: #1a1a19; --page: #0d0d0d;
+      --ink: #ffffff; --sub: #c3c2b7; --muted: #898781;
+      --grid: #2c2c2a; --baseline: #383835; --border: rgba(255,255,255,0.12);
+      --c1: #3987e5; --c2: #199e70; --c3: #c98500; --c4: #008300;
+      --c5: #9085e9; --c6: #e66767; --c7: #d55181; --c8: #d95926;
+      --good-bg: rgba(12,163,12,0.16); --bad-bg: rgba(208,59,59,0.16);
+    }
+  }
+  :root[data-theme="light"] {
+    --surface: #fcfcfb; --page: #f9f9f7;
+    --ink: #0b0b0b; --sub: #52514e; --muted: #898781;
+    --grid: #e1e0d9; --baseline: #c3c2b7; --border: rgba(11,11,11,0.10);
+    --c1: #2a78d6; --c2: #1baf7a; --c3: #eda100; --c4: #008300;
+    --c5: #4a3aa7; --c6: #e34948; --c7: #e87ba4; --c8: #eb6834;
+    --good-bg: rgba(12,163,12,0.10); --bad-bg: rgba(208,59,59,0.10);
+  }
+  :root[data-theme="dark"] {
+    --surface: #1a1a19; --page: #0d0d0d;
+    --ink: #ffffff; --sub: #c3c2b7; --muted: #898781;
+    --grid: #2c2c2a; --baseline: #383835; --border: rgba(255,255,255,0.12);
+    --c1: #3987e5; --c2: #199e70; --c3: #c98500; --c4: #008300;
+    --c5: #9085e9; --c6: #e66767; --c7: #d55181; --c8: #d95926;
+    --good-bg: rgba(12,163,12,0.16); --bad-bg: rgba(208,59,59,0.16);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--page); color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    line-height: 1.65;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 20px 16px 60px; }
+
+  /* ---------- 顶栏 ---------- */
+  .topbar { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+  .topbar .back {
+    font: inherit; font-size: 14px; color: var(--sub); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 10px; padding: 6px 14px; cursor: pointer;
+  }
+  .topbar .back:hover { color: var(--ink); border-color: var(--baseline); }
+  .topbar .spacer { flex: 1; }
+  .topbar .theme-btn {
+    font: inherit; font-size: 14px; background: var(--surface); color: var(--sub);
+    border: 1px solid var(--border); border-radius: 10px; padding: 6px 12px; cursor: pointer;
+  }
+
+  /* ---------- 首页 ---------- */
+  .hero { margin: 8px 0 6px; }
+  .hero h1 { font-size: 28px; margin: 0 0 4px; }
+  .hero p.lead { font-size: 15px; color: var(--sub); margin: 0 0 10px; }
+  .philosophy {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 14px 18px; font-size: 14px; color: var(--sub); margin: 14px 0 6px;
+  }
+  .philosophy b { color: var(--ink); }
+  .overall { display: flex; align-items: center; gap: 12px; margin: 16px 2px 4px; font-size: 13.5px; color: var(--sub); }
+  .overall .bar { flex: 1; height: 8px; border-radius: 4px; background: var(--grid); overflow: hidden; }
+  .overall .bar i { display: block; height: 100%; background: var(--good); border-radius: 4px; transition: width .4s; }
+
+  .domain-h { font-size: 15px; font-weight: 700; margin: 26px 2px 10px; display: flex; align-items: center; gap: 8px; }
+  .domain-h::after { content: ""; flex: 1; height: 1px; background: var(--grid); }
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 16px 16px 14px; cursor: pointer; position: relative;
+    border-top: 3px solid var(--cc, var(--c1));
+    transition: transform .12s, box-shadow .12s;
+  }
+  .card:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.10); }
+  .card .emoji { font-size: 26px; line-height: 1; }
+  .card h3 { font-size: 16px; margin: 8px 0 3px; }
+  .card .q { font-size: 13px; color: var(--sub); min-height: 40px; }
+  .card .meta { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 12px; }
+  .chip { background: var(--page); border: 1px solid var(--border); border-radius: 20px; padding: 1px 10px; color: var(--muted); }
+  .badge { margin-left: auto; border-radius: 20px; padding: 1px 10px; font-weight: 600; }
+  .badge.none { color: var(--muted); }
+  .badge.doing { color: var(--warn); background: rgba(250,178,25,0.14); }
+  .badge.done { color: var(--good); background: var(--good-bg); }
+
+  /* ---------- 模块页 ---------- */
+  .mhead { margin: 4px 0 18px; }
+  .mhead .emoji { font-size: 34px; }
+  .mhead h1 { font-size: 24px; margin: 6px 0 2px; }
+  .mhead .sub { color: var(--sub); font-size: 14.5px; }
+  .mhead .meta { margin-top: 8px; display: flex; gap: 8px; align-items: center; font-size: 12.5px; }
+
+  .sec {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 18px 20px; margin-bottom: 14px;
+  }
+  .sec h2 { font-size: 16.5px; margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
+  .sec h2 .tag {
+    font-size: 11.5px; font-weight: 600; border-radius: 20px; padding: 2px 10px;
+    background: color-mix(in srgb, var(--mod) 14%, transparent); color: var(--mod);
+  }
+  .sec p { margin: 8px 0; font-size: 14.5px; color: var(--sub); }
+  .sec p b, .sec li b { color: var(--ink); }
+  .sec ul, .sec ol { margin: 8px 0; padding-left: 22px; font-size: 14.5px; color: var(--sub); }
+  .sec li { margin: 4px 0; }
+  .sec .formula {
+    background: var(--page); border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 14px; margin: 10px 0; font-size: 16px; text-align: center; color: var(--ink);
+    overflow-x: auto;
+  }
+  .sec.hook { border-left: 4px solid var(--mod); }
+  .sec.lab { border: 1.5px dashed color-mix(in srgb, var(--mod) 45%, var(--border)); }
+  .try {
+    background: color-mix(in srgb, var(--mod) 7%, var(--surface));
+    border-radius: 10px; padding: 10px 14px; margin: 10px 0 4px; font-size: 13.5px; color: var(--sub);
+  }
+  .try b { color: var(--mod); }
+
+  /* 实验控件 */
+  .labbox { margin: 12px 0 4px; }
+  .labcv { display: block; width: 100%; border-radius: 10px; background: var(--page); }
+  .ctrls { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; margin: 12px 0 2px; }
+  .ctl { display: flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--sub); }
+  .ctl input[type=range] { width: 150px; accent-color: var(--mod); }
+  .ctl .val { font-variant-numeric: tabular-nums; font-weight: 650; color: var(--ink); min-width: 34px; }
+  .btn {
+    font: inherit; font-size: 13.5px; background: var(--surface); color: var(--ink);
+    border: 1px solid var(--baseline); border-radius: 10px; padding: 6px 14px; cursor: pointer;
+  }
+  .btn:hover { border-color: var(--muted); }
+  .btn.primary { background: var(--mod); border-color: var(--mod); color: #fff; font-weight: 600; }
+  .btn.primary:hover { filter: brightness(1.08); }
+  .btn:disabled { opacity: .45; cursor: default; }
+  .readout { font-size: 13.5px; color: var(--sub); margin-top: 8px; }
+  .readout b { color: var(--ink); font-variant-numeric: tabular-nums; }
+
+  /* ---------- 测验 ---------- */
+  .quiz-start { text-align: center; padding: 10px 0 6px; }
+  .quiz-start .info { color: var(--sub); font-size: 14px; margin-bottom: 12px; }
+  .qprogress { display: flex; gap: 6px; margin-bottom: 14px; }
+  .qprogress i { flex: 1; height: 5px; border-radius: 3px; background: var(--grid); }
+  .qprogress i.cur { background: var(--mod); }
+  .qprogress i.right { background: var(--good); }
+  .qprogress i.wrong { background: var(--bad); }
+  .qtext { font-size: 16px; margin: 4px 0 14px; color: var(--ink); }
+  .opts { display: grid; gap: 8px; }
+  .opt {
+    text-align: left; font: inherit; font-size: 14.5px; padding: 10px 14px; cursor: pointer;
+    background: var(--page); color: var(--ink); border: 1.5px solid var(--border); border-radius: 10px;
+  }
+  .opt:hover:not(:disabled) { border-color: var(--mod); }
+  .opt.sel-right { border-color: var(--good); background: var(--good-bg); font-weight: 600; }
+  .opt.sel-wrong { border-color: var(--bad); background: var(--bad-bg); }
+  .opt.show-right { border-color: var(--good); }
+  .opt:disabled { cursor: default; }
+  .numin { display: flex; gap: 8px; align-items: center; }
+  .numin input {
+    font: inherit; font-size: 15px; width: 140px; padding: 8px 12px;
+    background: var(--page); color: var(--ink); border: 1.5px solid var(--border); border-radius: 10px;
+  }
+  .numin input:focus { outline: none; border-color: var(--mod); }
+  .fb { border-radius: 10px; padding: 12px 14px; margin-top: 12px; font-size: 14px; }
+  .fb.ok { background: var(--good-bg); }
+  .fb.no { background: var(--bad-bg); }
+  .fb .head { font-weight: 700; margin-bottom: 4px; }
+  .fb.ok .head { color: var(--good); }
+  .fb.no .head { color: var(--bad); }
+  .fb .why { color: var(--sub); }
+  .fb .why b { color: var(--ink); }
+  .qnav { margin-top: 14px; text-align: right; }
+  .quiz-end { text-align: center; padding: 8px 0; }
+  .score-ring { font-size: 40px; font-weight: 700; }
+  .quiz-end .msg { color: var(--sub); font-size: 14.5px; margin: 6px 0 16px; }
+  .quiz-end .msg b { color: var(--ink); }
+
+  .mfoot { display: flex; gap: 10px; justify-content: space-between; margin-top: 18px; flex-wrap: wrap; }
+  footer.pagefoot { margin-top: 30px; font-size: 12.5px; color: var(--muted); text-align: center; }
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+
+<script>
+"use strict";
+/* =====================================================================
+   MathLab 核心框架：注册模块 / 路由 / 进度存档 / 测验引擎 / 实验工具
+   ===================================================================== */
+(function () {
+  const $app = () => document.getElementById("app");
+
+  /* ---------- 进度存档 ---------- */
+  const Store = {
+    KEY: "mathlab-progress-v1",
+    data: null,
+    load() {
+      if (this.data) return this.data;
+      try { this.data = JSON.parse(localStorage.getItem(this.KEY)) || {}; }
+      catch (e) { this.data = {}; }
+      return this.data;
+    },
+    get(id) { return this.load()[id] || null; },
+    record(id, pct) {
+      const d = this.load();
+      const cur = d[id] || { best: 0, attempts: 0 };
+      cur.attempts++;
+      cur.best = Math.max(cur.best, pct);
+      cur.mastered = cur.best >= 80;
+      d[id] = cur;
+      try { localStorage.setItem(this.KEY, JSON.stringify(d)); } catch (e) {}
+    },
+  };
+
+  /* ---------- 主题 ---------- */
+  function toggleTheme() {
+    const cur = document.documentElement.dataset.theme
+      || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    document.documentElement.dataset.theme = cur === "dark" ? "light" : "dark";
+    dispatchEvent(new Event("mathlab-theme"));
+  }
+
+  /* ---------- 小工具 ---------- */
+  function el(tag, attrs, ...children) {
+    const n = document.createElement(tag);
+    if (attrs) for (const [k, v] of Object.entries(attrs)) {
+      if (k === "class") n.className = v;
+      else if (k === "html") n.innerHTML = v;
+      else if (k.startsWith("on")) n.addEventListener(k.slice(2), v);
+      else n.setAttribute(k, v);
+    }
+    for (const c of children) if (c != null) n.append(c);
+    return n;
+  }
+  function fmt(x, d = 2) {
+    const v = Math.round(x * 10 ** d) / 10 ** d;
+    return String(Number.isInteger(v) ? v : v.toFixed(d).replace(/0+$/, "").replace(/\.$/, ""));
+  }
+  function shuffle(a) {
+    a = a.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  /* ---------- 主题色读取（供 canvas 用） ---------- */
+  function theme() {
+    const s = getComputedStyle(document.documentElement);
+    const g = (n) => s.getPropertyValue(n).trim();
+    return {
+      surface: g("--surface"), page: g("--page"), ink: g("--ink"), sub: g("--sub"),
+      muted: g("--muted"), grid: g("--grid"), baseline: g("--baseline"),
+      c1: g("--c1"), c2: g("--c2"), c3: g("--c3"), c4: g("--c4"),
+      c5: g("--c5"), c6: g("--c6"), c7: g("--c7"), c8: g("--c8"),
+      good: g("--good"), warn: g("--warn"), bad: g("--bad"), mod: g("--mod"),
+    };
+  }
+
+  /* ---------- 实验画布：自动 DPR / 自适应 / 主题重绘 / 可选动画 ---------- */
+  function makeCanvas(box, opts = {}) {
+    const aspect = opts.aspect || 0.55;
+    const cv = el("canvas", { class: "labcv" });
+    box.appendChild(cv);
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const api = { cv, drawFn: null, anim: !!opts.anim, W: 100, H: 100, t0: performance.now() };
+    function resize() {
+      const w = Math.max(80, box.clientWidth);
+      api.W = w; api.H = Math.round(w * aspect);
+      cv.width = Math.round(w * dpr);
+      cv.height = Math.round(api.H * dpr);
+      cv.style.height = api.H + "px";
+      draw();
+    }
+    function draw(now) {
+      if (!api.drawFn) return;
+      const ctx = cv.getContext("2d");
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, api.W, api.H);
+      api.drawFn(ctx, api.W, api.H, theme(), ((now || performance.now()) - api.t0) / 1000);
+    }
+    if (api.anim) {
+      // 持续 rAF；画布一旦脱离文档（切换页面）即停止
+      const run = (now) => { if (!cv.isConnected && api._live) return; api._live = true; draw(now); requestAnimationFrame(run); };
+      requestAnimationFrame(run);
+    }
+    new ResizeObserver(resize).observe(box);
+    addEventListener("mathlab-theme", () => draw());
+    setTimeout(resize, 0);
+    return {
+      cv,
+      onDraw(fn) { api.drawFn = fn; draw(); },
+      redraw: () => draw(),
+      size: () => ({ W: api.W, H: api.H }),
+    };
+  }
+
+  /* ---------- 控件 ---------- */
+  function slider(o) {
+    const val = el("span", { class: "val" }, o.format ? o.format(o.value) : fmt(o.value));
+    const input = el("input", {
+      type: "range", min: o.min, max: o.max, step: o.step ?? 1, value: o.value,
+      oninput: () => {
+        const v = +input.value;
+        val.textContent = o.format ? o.format(v) : fmt(v);
+        o.oninput && o.oninput(v);
+      },
+    });
+    const root = el("label", { class: "ctl" }, o.label + " ", input, val);
+    return { root, input, get: () => +input.value, set(v) { input.value = v; input.dispatchEvent(new Event("input")); } };
+  }
+  function button(label, onclick, primary) {
+    return el("button", { class: "btn" + (primary ? " primary" : ""), onclick }, label);
+  }
+  function ctrlRow(...items) {
+    return el("div", { class: "ctrls" }, ...items.map(i => i.root || i));
+  }
+
+  /* ---------- 测验引擎 ---------- */
+  function parseNum(str) {
+    str = String(str).trim().replace(/，/g, ",").replace(/－/g, "-");
+    const frac = str.match(/^(-?\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)$/);
+    if (frac) return +frac[1] / +frac[2];
+    const v = parseFloat(str);
+    return Number.isNaN(v) ? null : v;
+  }
+  function renderQuiz(container, mod) {
+    container.innerHTML = "";
+    const prog = Store.get(mod.id);
+    const info = prog
+      ? `共 ${mod.quiz.length} 题 · 历史最好成绩 <b>${prog.best}%</b>${prog.mastered ? " · ✅ 已掌握" : ""} · 答对 80% 即为掌握`
+      : `共 ${mod.quiz.length} 题 · 答对 80% 即为掌握 · 答错会告诉你"为什么"`;
+    const startBox = el("div", { class: "quiz-start" },
+      el("div", { class: "info", html: info }),
+      button("🚀 开始闯关", () => start(), true),
+    );
+    container.appendChild(startBox);
+
+    function start() {
+      container.innerHTML = "";
+      const order = shuffle(mod.quiz.map((_, i) => i));
+      const results = new Array(order.length).fill(null); // true/false
+      let idx = 0;
+      next();
+
+      function next() {
+        container.innerHTML = "";
+        if (idx >= order.length) return finish();
+        const q = mod.quiz[order[idx]];
+        const bar = el("div", { class: "qprogress" },
+          ...order.map((_, i) => el("i", {
+            class: results[i] === true ? "right" : results[i] === false ? "wrong" : i === idx ? "cur" : "",
+          })));
+        container.appendChild(bar);
+        container.appendChild(el("div", { class: "qtext", html: `<b>第 ${idx + 1} 题</b> · ${q.q}` }));
+        const zone = el("div");
+        container.appendChild(zone);
+
+        if (q.type === "num") {
+          const input = el("input", { type: "text", inputmode: "text", placeholder: "输入答案", autocomplete: "off" });
+          const ok = button("确认", () => {
+            const v = parseNum(input.value);
+            if (v === null && !q.accept) { input.style.borderColor = "var(--bad)"; return; }
+            let right = false;
+            if (q.accept && q.accept.includes(input.value.trim())) right = true;
+            else if (v !== null) right = Math.abs(v - q.answer) <= (q.tol ?? 1e-6);
+            settle(right, zone, q);
+            input.disabled = true; ok.disabled = true;
+          }, true);
+          input.addEventListener("keydown", e => { if (e.key === "Enter") ok.click(); });
+          zone.appendChild(el("div", { class: "numin" }, input, ok, q.unit ? el("span", { class: "ctl" }, q.unit) : null));
+          setTimeout(() => input.focus(), 50);
+        } else {
+          const seq = shuffle(q.options.map((_, i) => i));
+          const btns = seq.map(oi => {
+            const b = el("button", { class: "opt", html: q.options[oi] });
+            b.addEventListener("click", () => {
+              btns.forEach(x => x.disabled = true);
+              const right = oi === q.answer;
+              b.className = "opt " + (right ? "sel-right" : "sel-wrong");
+              if (!right) btns[seq.indexOf(q.answer)].classList.add("show-right");
+              settle(right, zone, q);
+            });
+            return b;
+          });
+          zone.appendChild(el("div", { class: "opts" }, ...btns));
+        }
+
+        function settle(right, zone, q) {
+          results[idx] = right;
+          bar.children[idx].className = right ? "right" : "wrong";
+          zone.appendChild(el("div", { class: "fb " + (right ? "ok" : "no") },
+            el("div", { class: "head" }, right ? "✅ 答对了！" : "❌ 还没对——看看为什么"),
+            el("div", { class: "why", html: q.explain }),
+          ));
+          zone.appendChild(el("div", { class: "qnav" },
+            button(idx === order.length - 1 ? "查看成绩 →" : "下一题 →", () => { idx++; next(); }, true)));
+        }
+      }
+
+      function finish() {
+        const right = results.filter(Boolean).length;
+        const pct = Math.round(100 * right / results.length);
+        Store.record(mod.id, pct);
+        const mastered = pct >= 80;
+        const msg = mastered
+          ? `<b>🏆 已掌握！</b>原理在手，题目只是它的化身。`
+          : pct >= 60
+            ? `不错的开始！回到上面的<b>实验</b>再玩一玩答错的知识点，原理想通了再来一次。`
+            : `别灰心——先别刷题，回到上面动手<b>做实验</b>，把"为什么"想明白，再回来挑战。`;
+        container.appendChild(el("div", { class: "quiz-end" },
+          el("div", { class: "score-ring", style: `color:${mastered ? "var(--good)" : pct >= 60 ? "var(--warn)" : "var(--bad)"}` },
+            `${right} / ${results.length}`),
+          el("div", { class: "msg", html: msg }),
+          el("div", null,
+            button("🔁 再挑战一次", () => start(), !mastered), " ",
+            button("🏠 返回知识地图", () => location.hash = "#/")),
+        ));
+      }
+    }
+  }
+
+  /* ---------- 页面渲染 ---------- */
+  const DOMAINS = ["数与代数", "图形与几何", "统计与概率"];
+
+  function renderHome() {
+    document.documentElement.style.setProperty("--mod", "var(--c1)");
+    const app = $app();
+    app.innerHTML = "";
+    app.appendChild(el("div", { class: "topbar" },
+      el("div", { class: "spacer" }),
+      el("button", { class: "theme-btn", onclick: toggleTheme }, "🌗 主题"),
+    ));
+    app.appendChild(el("div", { class: "hero" },
+      el("h1", null, "初中数学 · 原理实验室"),
+      el("p", { class: "lead" }, "从“为什么”出发，把数学玩明白 —— 先动手实验，再理解原理，最后闯关检验。"),
+    ));
+    app.appendChild(el("div", { class: "philosophy", html:
+      `这里没有需要死记的"技巧"。每个知识点都会回答三个问题：<b>它为什么会被发明？</b>（数学家遇到了什么麻烦）` +
+      `<b>它的本质是什么？</b>（用你能亲手操作的图形和实验看见它）<b>它能复用在哪里？</b>（同一个原理如何解决一类问题）。` +
+      `学习顺序建议：先玩 🧪 实验，再读 💡 原理，最后 🚀 闯关。`,
+    }));
+
+    const mods = MathLab.modules;
+    const mastered = mods.filter(m => Store.get(m.id)?.mastered).length;
+    const bar = el("div", { class: "overall" },
+      el("span", null, `掌握进度 ${mastered} / ${mods.length}`),
+      el("div", { class: "bar" }, el("i", { style: `width:${mods.length ? 100 * mastered / mods.length : 0}%` })),
+    );
+    app.appendChild(bar);
+
+    for (const dom of DOMAINS) {
+      const list = mods.filter(m => m.domain === dom);
+      if (!list.length) continue;
+      app.appendChild(el("div", { class: "domain-h" }, dom));
+      app.appendChild(el("div", { class: "cards" }, ...list.map(m => {
+        const p = Store.get(m.id);
+        const badge = p?.mastered
+          ? el("span", { class: "badge done" }, `✓ 已掌握 ${p.best}%`)
+          : p
+            ? el("span", { class: "badge doing" }, `最好 ${p.best}%`)
+            : el("span", { class: "badge none" }, "未开始");
+        return el("div", {
+          class: "card", style: `--cc: var(--${m.color})`,
+          onclick: () => location.hash = "#/m/" + m.id,
+        },
+          el("div", { class: "emoji" }, m.emoji),
+          el("h3", null, m.title),
+          el("div", { class: "q" }, m.question),
+          el("div", { class: "meta" }, el("span", { class: "chip" }, m.grade), badge),
+        );
+      })));
+    }
+    app.appendChild(el("footer", { class: "pagefoot" },
+      "给家长：本页离线可用，进度保存在本机浏览器。孩子答错时请先陪 TA 回到实验区“玩”，而不是直接讲答案。"));
+  }
+
+  function renderModule(mod) {
+    document.documentElement.style.setProperty("--mod", `var(--${mod.color})`);
+    const app = $app();
+    app.innerHTML = "";
+    scrollTo(0, 0);
+    app.appendChild(el("div", { class: "topbar" },
+      el("button", { class: "back", onclick: () => location.hash = "#/" }, "← 知识地图"),
+      el("div", { class: "spacer" }),
+      el("button", { class: "theme-btn", onclick: toggleTheme }, "🌗 主题"),
+    ));
+    const p = Store.get(mod.id);
+    app.appendChild(el("div", { class: "mhead" },
+      el("div", { class: "emoji" }, mod.emoji),
+      el("h1", null, mod.title),
+      el("div", { class: "sub" }, mod.question),
+      el("div", { class: "meta" },
+        el("span", { class: "chip" }, mod.grade),
+        el("span", { class: "chip" }, mod.domain),
+        p?.mastered ? el("span", { class: "badge done" }, `✓ 已掌握 ${p.best}%`) : null,
+      ),
+    ));
+    app.appendChild(el("div", { class: "sec hook" },
+      el("h2", null, "🤔 先想一想", el("span", { class: "tag" }, "好奇心")),
+      el("div", { html: mod.hook }),
+    ));
+    for (const s of mod.sections) {
+      if (s.kind === "lab") {
+        const sec = el("div", { class: "sec lab" },
+          el("h2", null, "🧪 " + s.title, el("span", { class: "tag" }, "动手实验")));
+        if (s.intro) sec.appendChild(el("div", { html: s.intro }));
+        const box = el("div", { class: "labbox" });
+        sec.appendChild(box);
+        if (s.try_) sec.appendChild(el("div", { class: "try", html: "<b>试一试：</b>" + s.try_ }));
+        app.appendChild(sec);
+        try { s.mount(box, MathLab.H); }
+        catch (e) { box.textContent = "实验加载失败：" + e.message; console.error(e); }
+      } else {
+        app.appendChild(el("div", { class: "sec" },
+          el("h2", null, "💡 " + s.title, el("span", { class: "tag" }, "原理")),
+          el("div", { html: s.html }),
+        ));
+      }
+    }
+    const quizSec = el("div", { class: "sec" },
+      el("h2", null, "🚀 闯关检测", el("span", { class: "tag" }, "掌握了吗")));
+    const qbox = el("div");
+    quizSec.appendChild(qbox);
+    app.appendChild(quizSec);
+    renderQuiz(qbox, mod);
+
+    const mods = MathLab.modules;
+    const i = mods.indexOf(mod);
+    app.appendChild(el("div", { class: "mfoot" },
+      i > 0 ? button("← " + mods[i - 1].title, () => location.hash = "#/m/" + mods[i - 1].id) : el("span"),
+      i < mods.length - 1 ? button(mods[i + 1].title + " →", () => location.hash = "#/m/" + mods[i + 1].id) : el("span"),
+    ));
+  }
+
+  /* ---------- 路由 ---------- */
+  function route() {
+    const h = location.hash;
+    const m = h.match(/^#\/m\/([\w-]+)/);
+    const mod = m && MathLab.modules.find(x => x.id === m[1]);
+    if (mod) renderModule(mod);
+    else renderHome();
+  }
+
+  /* ---------- 对外 API ---------- */
+  window.MathLab = {
+    modules: [],
+    register(mod) { this.modules.push(mod); },
+    H: { el, fmt, slider, button, ctrlRow, makeCanvas, theme, shuffle },
+    start() { addEventListener("hashchange", route); route(); },
+  };
+})();
+</script>
+
+<script src="modules/negatives.js"></script>
+<script src="modules/algebra.js"></script>
+<script src="modules/equations.js"></script>
+<script src="modules/functions.js"></script>
+<script src="modules/quadratic.js"></script>
+<script src="modules/pythagoras.js"></script>
+<script src="modules/similarity.js"></script>
+<script src="modules/circle.js"></script>
+<script src="modules/probability.js"></script>
+<script>MathLab.start();</script>
+</body>
+</html>
