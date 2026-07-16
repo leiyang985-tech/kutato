@@ -11,8 +11,23 @@
     const sa = slider({ label: "a =", min: -2, max: 2, step: 0.25, value: 1, oninput: v => { state.a = v || 0.25; upd(); } });
     const sh = slider({ label: "h =", min: -4, max: 4, step: 0.5, value: 1, oninput: v => { state.h = v; upd(); } });
     const sk = slider({ label: "k =", min: -5, max: 5, step: 0.5, value: -2, oninput: v => { state.k = v; upd(); } });
-    box.appendChild(ctrlRow(sa, sh, sk));
+    box.appendChild(ctrlRow(sa, sh, sk, el("span", { class: "ctl" }, "👆 也可以直接拖动橙色顶点")));
     box.appendChild(readout);
+    const geom = () => {
+      const { W, H } = canvas.size();
+      return { x0: W / 2, y0: H / 2, ux: (W - 60) / 16, uy: (H - 40) / 14 };
+    };
+    canvas.enableDrag({
+      hit(x, y) {
+        const { x0, y0, ux, uy } = geom();
+        return Math.hypot(x - (x0 + state.h * ux), y - (y0 - state.k * uy)) < 24 ? "v" : null;
+      },
+      move(x, y) {
+        const { x0, y0, ux, uy } = geom();
+        sh.set(Math.max(-4, Math.min(4, Math.round((x - x0) / ux * 2) / 2)));
+        sk.set(Math.max(-5, Math.min(5, Math.round((y0 - y) / uy * 2) / 2)));
+      },
+    });
     function update() {
       const { a, h, k } = state;
       readout.innerHTML = `y = ${fmt(a)}(x ${h >= 0 ? "− " + fmt(h) : "+ " + fmt(-h)})² ${k >= 0 ? "+ " + fmt(k) : "− " + fmt(-k)}　顶点 <b>(${fmt(h)}, ${fmt(k)})</b>　开口${a > 0 ? "向上（有最小值 " + fmt(k) + "）" : "向下（有最大值 " + fmt(k) + "）"}`;
@@ -46,11 +61,14 @@
         else ctx.lineTo(X(px), Y(py));
       }
       ctx.stroke();
-      // 顶点
+      // 顶点（可拖拽手柄）
       ctx.fillStyle = T.c8;
-      ctx.beginPath(); ctx.arc(X(h), Y(k), 5.5, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(X(h), Y(k), 8, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = T.surface; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.arc(X(h), Y(k), 8, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = T.c8;
       ctx.font = "600 12px system-ui"; ctx.textAlign = "left"; ctx.textBaseline = "top";
-      ctx.fillText(`顶点 (${fmt(h)}, ${fmt(k)})`, X(h) + 9, Y(k) + 4);
+      ctx.fillText(`顶点 (${fmt(h)}, ${fmt(k)})`, X(h) + 11, Y(k) + 6);
       // 与 x 轴交点（方程的解）
       if (a !== 0 && a * k < 0) {
         const r = Math.sqrt(-k / a);
@@ -73,8 +91,8 @@
     const f = (x) => peak() - state.a * (x - state.h) ** 2;
     const peak = () => 2 + state.a * state.h ** 2; // 保证经过出手点 (0,2)
     const HOOP = { x: 8, y: 3 };
-    const sa = slider({ label: "弧度 a =", min: 0.05, max: 0.8, step: 0.01, value: 0.3, oninput: v => { state.a = v; state.fired = false; update(); } });
-    const sh = slider({ label: "最高点位置 h =", min: 1, max: 7, step: 0.1, value: 3, oninput: v => { state.h = v; state.fired = false; update(); } });
+    const sa = slider({ label: "弧度 a =", min: 0.05, max: 0.8, step: 0.01, value: 0.3, oninput: v => { state.a = v; state.fired = false; state.result = undefined; update(); } });
+    const sh = slider({ label: "最高点位置 h =", min: 1, max: 7, step: 0.1, value: 3, oninput: v => { state.h = v; state.fired = false; state.result = undefined; update(); } });
     const shoot = button("🏀 投篮！", () => { state.fired = true; state.t = 0; }, true);
     box.appendChild(ctrlRow(sa, sh, shoot));
     box.appendChild(readout);

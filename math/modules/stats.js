@@ -11,8 +11,25 @@
     const readout = el("div", { class: "readout" });
     const sr = slider({ label: "第 7 户的收入 =", min: 8, max: 100, step: 1, value: 8,
       format: v => v + " 千", oninput: v => { state.rich = v; canvas.redraw(); update(); } });
-    box.appendChild(ctrlRow(sr));
+    box.appendChild(ctrlRow(sr, el("span", { class: "ctl" }, "👆 也可以直接左右拖动黄色的点")));
     box.appendChild(readout);
+    const geom = () => {
+      const { W } = canvas.size();
+      const maxV = Math.max(20, state.rich + 5);
+      const mL = 30, mR = 20;
+      return { maxV, mL, X: (v) => mL + (W - mL - mR) * v / maxV, span: W - mL - mR };
+    };
+    canvas.enableDrag({
+      hit(x, y) {
+        const { X } = geom();
+        const { H } = canvas.size();
+        return (Math.abs(x - X(state.rich)) < 22 && y > H * 0.52 - 70 && y < H * 0.52 + 12) ? "r" : null;
+      },
+      move(x) {
+        const { maxV, mL, span } = geom();
+        sr.set(Math.max(8, Math.min(100, Math.round((x - mL) / span * maxV))));
+      },
+    });
     const data = () => base.concat([state.rich]);
     const mean = (a) => a.reduce((s, x) => s + x, 0) / a.length;
     const median = (a) => { const s = a.slice().sort((x, y) => x - y); return s[Math.floor(s.length / 2)]; };
@@ -66,6 +83,62 @@
     });
   }
 
+  /* 实验二：两位神枪手（方差：平均数一样，脾气不同） */
+  function mountVar(box) {
+    const state = { s: 2 };
+    const A = [7, 8, 8, 8, 9];                 // 稳定选手
+    const PAT = [-2, 1, 2, -1, 0];             // B 的波动模式（和为 0，平均恒为 8）
+    const canvas = makeCanvas(box, { aspect: 0.42 });
+    const readout = el("div", { class: "readout" });
+    const ss = slider({ label: "B 的发挥波动 =", min: 0, max: 2, step: 0.1, value: 2,
+      oninput: v => { state.s = v; canvas.redraw(); update(); } });
+    box.appendChild(ctrlRow(ss));
+    box.appendChild(readout);
+    const B = () => PAT.map(p => 8 + p * state.s);
+    const variance = (arr) => {
+      const m = arr.reduce((x, y) => x + y, 0) / arr.length;
+      return arr.reduce((x, y) => x + (y - m) ** 2, 0) / arr.length;
+    };
+    function update() {
+      const vA = variance(A), vB = variance(B());
+      readout.innerHTML = `两人平均都是 <b>8 环</b>。方差：A = <b style="color:var(--c1)">${fmt(vA, 2)}</b>，B = <b style="color:var(--c8)">${fmt(vB, 2)}</b>` +
+        `　→ 决赛派谁？${vB > vA ? "求稳选 <b>A</b>（方差小 = 发挥稳）" : "两人一样稳，都可以"}`;
+    }
+    update();
+    canvas.onDraw((ctx, W, H, T) => {
+      const m = 46, u = (W - 2 * m) / 8;
+      const X = (v) => m + (v - 4) * u;
+      const row = (data, y, color, name) => {
+        ctx.strokeStyle = T.grid; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(X(4), y); ctx.lineTo(X(12), y); ctx.stroke();
+        // 平均线
+        ctx.strokeStyle = T.c6; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]);
+        ctx.beginPath(); ctx.moveTo(X(8), y - 16); ctx.lineTo(X(8), y + 16); ctx.stroke();
+        ctx.setLineDash([]);
+        // 偏差须 + 点（相同值纵向错开）
+        const seen = {};
+        for (const v of data) {
+          seen[v] = (seen[v] || 0) + 1;
+          const dy = (seen[v] - 1) * 10;
+          ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.globalAlpha = 0.45;
+          ctx.beginPath(); ctx.moveTo(X(8), y - dy); ctx.lineTo(X(v), y - dy); ctx.stroke();
+          ctx.globalAlpha = 1;
+          ctx.fillStyle = color;
+          ctx.beginPath(); ctx.arc(X(v), y - dy, 6, 0, Math.PI * 2); ctx.fill();
+          ctx.strokeStyle = T.surface; ctx.lineWidth = 1.5; ctx.stroke();
+        }
+        ctx.fillStyle = T.sub; ctx.font = "600 12px system-ui"; ctx.textAlign = "left"; ctx.textBaseline = "bottom";
+        ctx.fillText(name, X(4), y - 20);
+      };
+      row(A, H * 0.34, T.c1, "选手 A（稳）");
+      row(B(), H * 0.78, T.c8, "选手 B");
+      ctx.fillStyle = T.muted; ctx.font = "11px system-ui"; ctx.textAlign = "center"; ctx.textBaseline = "top";
+      for (let v = 4; v <= 12; v += 2) ctx.fillText(v + "环", X(v), H * 0.82 + 12);
+      ctx.fillStyle = T.c6; ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+      ctx.fillText("平均 8 环", X(8), H * 0.16);
+    });
+  }
+
   MathLab.register({
     id: "stats",
     title: "统计：平均数说了算吗",
@@ -91,6 +164,9 @@
       { kind: "lab", title: "富翁搬进小区", mount: mountMean,
         intro: `<p>小区 7 户人家，前 6 户月收入 3～7 千。拖动滑杆，让第 7 户从普通人变成富翁，盯着两个“代表”的反应。</p>`,
         try_: `把第 7 户拉到 100 千（十万）：红色三角（平均数）被远远拖走，蓝线（中位数）却一动不动。想一想为什么——平均数是"重心"，远处一个重物就能撬动它；中位数只关心"谁站中间"，两端的人再极端也换不了中间人。` },
+      { kind: "lab", title: "两位神枪手：平均一样，脾气不同", mount: mountVar,
+        intro: `<p>A、B 两位选手各打 5 枪，平均都是 8 环。拖动"波动"滑杆，看 B 的成绩散开——须线越长，离平均越远。</p>`,
+        try_: `平均数相同时，还需要一个数来描述"散得开不开"——这就是<b>方差</b>：把每个偏差平方后再平均（平方是为了让正负偏差不互相抵消，还顺便放大了大偏差的存在感）。决赛要求稳，你派谁？` },
       {
         kind: "concept", title: "原理的复用：现实里的选择题",
         html: `<ul>
@@ -120,6 +196,13 @@
           "最大值和最小值的正中间", "把总量在所有成员之间摊匀，是数据的“重心”",
           "出现次数最多的数", "排序后中间的数"], answer: 1,
         explain: "平均数 = 总量 ÷ 个数，相当于“大家把钱放一起再平分”。作为重心，<b>每个数据都在拉它</b>——这既是它公平的地方，也是它怕极端值的原因。" },
+      { type: "mc", q: "两位选手平均环数都是 8，决赛想求稳，应该看哪个指标选人？", options: [
+          "谁的最高分更高", "谁的方差更小（发挥更稳定）", "谁的名字好听", "平均数一样就随便选"], answer: 1,
+        explain: "平均数只说“整体水平”，<b>方差说“稳不稳”</b>。方差小 = 每次都在平均值附近 = 决赛不容易失手。" },
+      { type: "mc", q: "计算方差时，为什么要把每个偏差先“平方”再平均？", options: [
+          "让数字变大更好看", "正负偏差直接相加会互相抵消成 0，平方后都变成正数（还放大了大偏差）",
+          "传统习惯", "为了开根号方便"], answer: 1,
+        explain: "偏差有正有负，直接平均永远得 0——什么也测不出来。<b>平方让所有偏差都“现形”</b>，而且离得越远罚得越重。" },
     ],
   });
 })();

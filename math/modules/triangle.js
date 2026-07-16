@@ -18,8 +18,6 @@
     const state = { ax: 0.6, ay: 3, proof: false };
     const canvas = makeCanvas(box, { aspect: 0.56 });
     const readout = el("div", { class: "readout" });
-    const sx = slider({ label: "顶点 A 左右 =", min: -3.5, max: 3.5, step: 0.1, value: 0.6, oninput: v => { state.ax = v; upd(); } });
-    const sy = slider({ label: "顶点 A 高度 =", min: 1.2, max: 4.5, step: 0.1, value: 3, oninput: v => { state.ay = v; upd(); } });
     const bp = button("显示平行线证明", () => {
       state.proof = !state.proof;
       bp.className = "btn" + (state.proof ? " primary" : "");
@@ -27,8 +25,26 @@
       upd();
     });
     const upd = () => { canvas.redraw(); update(); };
-    box.appendChild(ctrlRow(sx, sy, bp));
+    box.appendChild(ctrlRow(bp, el("span", { class: "ctl" }, "👆 直接用手拖动红色顶点 A")));
     box.appendChild(readout);
+    // 画布变换（draw 与拖拽共用）
+    const geom = () => {
+      const { W, H } = canvas.size();
+      const u = Math.min((W - 60) / 8.5, (H - 70) / 5.6);
+      return { u, ox: W / 2, oy: H - 40 };
+    };
+    canvas.enableDrag({
+      hit(x, y) {
+        const { u, ox, oy } = geom();
+        return Math.hypot(x - (ox + state.ax * u), y - (oy - state.ay * u)) < 26 ? "A" : null;
+      },
+      move(x, y) {
+        const { u, ox, oy } = geom();
+        state.ax = Math.max(-3.8, Math.min(3.8, (x - ox) / u));
+        state.ay = Math.max(1.0, Math.min(4.6, (oy - y) / u));
+        update();
+      },
+    });
 
     const B = [-3.2, 0], C = [3.2, 0];
     function angles() {
@@ -80,9 +96,14 @@
         ctx.fillStyle = T.muted;
         ctx.fillText("蓝 + 红 + 橙 = 一个平角", axp + 1.6 * u, ayp + 16);
       }
+      // 可拖拽的顶点手柄
+      ctx.fillStyle = T.c6;
+      ctx.beginPath(); ctx.arc(axp, ayp, 9, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = T.surface; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.arc(axp, ayp, 9, 0, Math.PI * 2); ctx.stroke();
       // 顶点标签
       ctx.font = "700 13px system-ui"; ctx.textAlign = "center";
-      ctx.fillStyle = T.c6; ctx.textBaseline = "bottom"; ctx.fillText("A", axp, ayp - (state.proof ? 34 : 8));
+      ctx.fillStyle = T.c6; ctx.textBaseline = "bottom"; ctx.fillText("A", axp, ayp - (state.proof ? 34 : 12));
       ctx.fillStyle = T.c1; ctx.textBaseline = "top"; ctx.fillText("B", bxp - 12, byp + 4);
       ctx.fillStyle = T.c8; ctx.fillText("C", cxp + 12, cyp + 4);
     });

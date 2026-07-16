@@ -110,6 +110,7 @@
   .sec h2 { font-size: 16.5px; margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
   .sec h2 .tag {
     font-size: 11.5px; font-weight: 600; border-radius: 20px; padding: 2px 10px;
+    background: rgba(127,127,127,0.12); /* 旧浏览器回退 */
     background: color-mix(in srgb, var(--mod) 14%, transparent); color: var(--mod);
   }
   .sec p { margin: 8px 0; font-size: 14.5px; color: var(--sub); }
@@ -122,8 +123,9 @@
     overflow-x: auto;
   }
   .sec.hook { border-left: 4px solid var(--mod); }
-  .sec.lab { border: 1.5px dashed color-mix(in srgb, var(--mod) 45%, var(--border)); }
+  .sec.lab { border: 1.5px dashed var(--baseline); border-color: color-mix(in srgb, var(--mod) 45%, var(--border)); }
   .try {
+    background: var(--page); /* 旧浏览器回退 */
     background: color-mix(in srgb, var(--mod) 7%, var(--surface));
     border-radius: 10px; padding: 10px 14px; margin: 10px 0 4px; font-size: 13.5px; color: var(--sub);
   }
@@ -214,8 +216,9 @@
   .streak b { color: var(--ink); }
   .cta {
     display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    background: var(--surface); border: 1.5px solid var(--border); /* 旧浏览器回退 */
     background: color-mix(in srgb, var(--c1) 8%, var(--surface));
-    border: 1.5px solid color-mix(in srgb, var(--c1) 30%, var(--border));
+    border-color: color-mix(in srgb, var(--c1) 30%, var(--border));
     border-radius: 16px; padding: 14px 18px; margin: 10px 0 4px; cursor: pointer;
     transition: transform .12s, box-shadow .12s;
   }
@@ -277,6 +280,20 @@
    ===================================================================== */
 (function () {
   const $app = () => document.getElementById("app");
+
+  /* 旧版 Safari（旧 iPad 常见）没有 roundRect —— 补一个，避免实验崩溃 */
+  if (!CanvasRenderingContext2D.prototype.roundRect) {
+    CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+      r = Math.min(Array.isArray(r) ? (r[0] || 0) : (r || 0), w / 2, h / 2);
+      this.moveTo(x + r, y);
+      this.arcTo(x + w, y, x + w, y + h, r);
+      this.arcTo(x + w, y + h, x, y + h, r);
+      this.arcTo(x, y + h, x, y, r);
+      this.arcTo(x, y, x + w, y, r);
+      this.closePath();
+      return this;
+    };
+  }
 
   /* ---------- 进度存档 ---------- */
   const Store = {
@@ -416,7 +433,8 @@
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     const api = { cv, drawFn: null, anim: !!opts.anim, W: 100, H: 100, t0: performance.now() };
     function resize() {
-      const w = Math.max(80, box.clientWidth);
+      const w = box.clientWidth;
+      if (w < 40) return; // 尚未完成布局，等 ResizeObserver 下一次回调
       api.W = w; api.H = Math.round(w * aspect);
       cv.width = Math.round(w * dpr);
       cv.height = Math.round(api.H * dpr);
@@ -443,6 +461,38 @@
       onDraw(fn) { api.drawFn = fn; draw(); },
       redraw: () => draw(),
       size: () => ({ W: api.W, H: api.H }),
+      /* 画布直接拖拽：hit(x,y) 返回被抓住的手柄（null/false=没抓到），
+         move(x,y,handle) 拖动中持续回调，up() 松手回调。坐标是画布逻辑坐标。 */
+      enableDrag({ hit, move, up }) {
+        cv.style.touchAction = "none";
+        let active = null;
+        const pos = (e) => {
+          const r = cv.getBoundingClientRect();
+          return [(e.clientX - r.left) * (api.W / r.width), (e.clientY - r.top) * (api.H / r.height)];
+        };
+        cv.addEventListener("pointerdown", (e) => {
+          const [x, y] = pos(e);
+          const h = hit(x, y);
+          if (h == null || h === false) return;
+          active = h;
+          cv.setPointerCapture(e.pointerId);
+          cv.style.cursor = "grabbing";
+          e.preventDefault();
+          move(x, y, active); draw();
+        });
+        cv.addEventListener("pointermove", (e) => {
+          const [x, y] = pos(e);
+          if (active == null) {
+            const h = hit(x, y);
+            cv.style.cursor = (h == null || h === false) ? "default" : "grab";
+            return;
+          }
+          move(x, y, active); draw();
+        });
+        const end = () => { if (active != null) { active = null; cv.style.cursor = "grab"; up && up(); } };
+        cv.addEventListener("pointerup", end);
+        cv.addEventListener("pointercancel", end);
+      },
     };
   }
 
@@ -469,11 +519,15 @@
 
   /* ---------- 测验引擎 ---------- */
   function parseNum(str) {
-    str = String(str).trim().replace(/，/g, ",").replace(/－/g, "-");
-    const frac = str.match(/^(-?\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)$/);
-    if (frac) return +frac[1] / +frac[2];
-    const v = parseFloat(str);
-    return Number.isNaN(v) ? null : v;
+    // 宽容解析：全角数字/符号、"x=5"、"12米"、"77°"、分数 "1/2" 都能读懂
+    str = String(str).trim()
+      .replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
+      .replace(/．/g, ".").replace(/[－−]/g, "-").replace(/[／÷]/g, "/")
+      .replace(/^[a-zA-Z]\s*[=＝]\s*/, "");
+    const frac = str.match(/^(-?\d+(?:\.\d+)?)\s*\/\s*(-?\d+(?:\.\d+)?)/);
+    if (frac && +frac[2] !== 0) return +frac[1] / +frac[2];
+    const m = str.match(/^-?\d+(?:\.\d+)?/);
+    return m ? +m[0] : null;
   }
   /* 撒花庆祝 */
   function confetti() {
@@ -583,6 +637,7 @@
           zone.appendChild(fb);
           zone.appendChild(el("div", { class: "qnav" },
             button(idx === order.length - 1 ? "查看成绩 →" : "下一题 →", () => { idx++; next(); }, true)));
+          setTimeout(() => fb.scrollIntoView({ block: "nearest", behavior: "smooth" }), 60);
         }
       }
 
@@ -1024,11 +1079,15 @@
 <script src="modules/negatives.js"></script>
 <script src="modules/algebra.js"></script>
 <script src="modules/equations.js"></script>
+<script src="modules/inequality.js"></script>
+<script src="modules/systems.js"></script>
+<script src="modules/sqrt.js"></script>
 <script src="modules/functions.js"></script>
 <script src="modules/quadratic.js"></script>
 <script src="modules/triangle.js"></script>
 <script src="modules/pythagoras.js"></script>
 <script src="modules/similarity.js"></script>
+<script src="modules/trig.js"></script>
 <script src="modules/circle.js"></script>
 <script src="modules/stats.js"></script>
 <script src="modules/probability.js"></script>

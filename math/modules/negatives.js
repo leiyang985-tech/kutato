@@ -17,8 +17,8 @@
     modeBtns.sub = button("a − b（走 a，再反着走 b）", () => setMode("sub"));
     modeBtns.abs = button("|a|（离家多远）", () => setMode("abs"));
 
-    const sa = slider({ label: "a =", min: -9, max: 9, step: 1, value: state.a, oninput: v => { state.a = v; canvas.redraw(); update(); } });
-    const sb = slider({ label: "b =", min: -9, max: 9, step: 1, value: state.b, oninput: v => { state.b = v; canvas.redraw(); update(); } });
+    const sa = slider({ label: "a =", min: -6, max: 6, step: 1, value: state.a, oninput: v => { state.a = v; canvas.redraw(); update(); } });
+    const sb = slider({ label: "b =", min: -6, max: 6, step: 1, value: state.b, oninput: v => { state.b = v; canvas.redraw(); update(); } });
 
     box.appendChild(ctrlRow(modeBtns.add, modeBtns.sub, modeBtns.abs));
     box.appendChild(ctrlRow(sa, sb));
@@ -47,14 +47,14 @@
     }
 
     canvas.onDraw((ctx, W, H, T) => {
-      const m = 34, u = (W - 2 * m) / 20, y = H * 0.62;
-      const px = (x) => m + (x + 10) * u;
+      const m = 34, u = (W - 2 * m) / 24, y = H * 0.62;
+      const px = (x) => m + (x + 12) * u;
       // 数轴
       ctx.strokeStyle = T.baseline; ctx.lineWidth = 1.5;
       ctx.beginPath(); ctx.moveTo(m - 10, y); ctx.lineTo(W - m + 10, y); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(W - m + 10, y); ctx.lineTo(W - m + 2, y - 4); ctx.moveTo(W - m + 10, y); ctx.lineTo(W - m + 2, y + 4); ctx.stroke();
       ctx.font = "11px system-ui"; ctx.textAlign = "center"; ctx.textBaseline = "top";
-      for (let x = -10; x <= 10; x++) {
+      for (let x = -12; x <= 12; x++) {
         ctx.strokeStyle = T.baseline;
         ctx.beginPath(); ctx.moveTo(px(x), y - (x === 0 ? 7 : 4)); ctx.lineTo(px(x), y + (x === 0 ? 7 : 4)); ctx.stroke();
         if (x % 2 === 0) { ctx.fillStyle = x === 0 ? T.ink : T.muted; ctx.fillText(String(x), px(x), y + 10); }

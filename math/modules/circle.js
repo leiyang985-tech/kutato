@@ -14,7 +14,8 @@
     function update() {
       const p = peri(state.n);
       readout.innerHTML = `内接正 ${state.n} 边形：周长 ÷ 直径 = <b>${fmt(p, 5)}</b>　真正的 π = 3.14159…　还差 <b>${fmt(Math.PI - p, 5)}</b>` +
-        (state.n >= 90 ? "　—— 边越多越接近，但永远差一点点：π 就住在这个逼近的尽头。" : "");
+        (p >= 3.14 ? "　🎉 <b>达到 3.14 了！</b>祖冲之算到 3.1415926 用的是上万边形——你已经走在他的路上。" :
+          state.n >= 40 ? "　—— 快了，再加边数！" : "");
     }
     update();
     canvas.onDraw((ctx, W, H, T) => {
@@ -68,8 +69,25 @@
     const A = -Math.PI / 2 - Math.PI / 6, B = -Math.PI / 2 + Math.PI / 6; // 固定弧 AB（上方，圆心角恰为 60°）
     const sp = slider({ label: "移动圆上的点 P", min: 0.8, max: 5.5 - 0.8, step: 0.02, value: 1.9,
       oninput: v => { state.p = v; canvas.redraw(); update(); } });
-    box.appendChild(ctrlRow(sp));
+    box.appendChild(ctrlRow(sp, el("span", { class: "ctl" }, "👆 也可以直接拖 P 点沿圆跑")));
     box.appendChild(readout);
+    const geom = () => {
+      const { W, H } = canvas.size();
+      return { R: Math.min(W, H) * 0.36, cx: W / 2, cy: H / 2 + 8 };
+    };
+    canvas.enableDrag({
+      hit(x, y) {
+        const { R, cx, cy } = geom();
+        const pAng = B + state.p;
+        const px = cx + R * Math.cos(pAng), py = cy + R * Math.sin(pAng);
+        return Math.hypot(x - px, y - py) < 28 ? "P" : null;
+      },
+      move(x, y) {
+        const { cx, cy } = geom();
+        const raw = (((Math.atan2(y - cy, x - cx) - B) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+        sp.set(Math.max(0.8, Math.min(5.5 - 0.8, raw)));
+      },
+    });
     const central = () => B - A; // 圆心角（弧 AB 对应）
     function inscribed() { return central() / 2; }
     function update() {

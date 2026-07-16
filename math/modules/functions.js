@@ -86,8 +86,20 @@
     const canvas = makeCanvas(box, { aspect: 0.56 });
     const readout = el("div", { class: "readout" });
     const sx = slider({ label: "每月用量 x =", min: 0, max: 30, step: 1, value: 8, format: v => v + " GB", oninput: v => { state.x = v; canvas.redraw(); update(); } });
-    box.appendChild(ctrlRow(sx));
+    box.appendChild(ctrlRow(sx, el("span", { class: "ctl" }, "👆 也可以直接左右拖图里的虚线")));
     box.appendChild(readout);
+    canvas.enableDrag({
+      hit(x) {
+        const { W } = canvas.size();
+        const ux = (W - 70) / 30;
+        return Math.abs(x - (46 + state.x * ux)) < 18 ? "x" : null;
+      },
+      move(x) {
+        const { W } = canvas.size();
+        const ux = (W - 70) / 30;
+        sx.set(Math.max(0, Math.min(30, Math.round((x - 46) / ux))));
+      },
+    });
     const A = (x) => 30 + 3 * x, B = (x) => 5 * x;
     function update() {
       const { x } = state;
