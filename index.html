@@ -203,6 +203,24 @@ table.verdict .no{color:var(--red);font-weight:700}
 .guide ol,.guide ul{padding-left:1.4em}
 .guide li{margin:6px 0}
 
+/* ---------- 拼图三 · 因式分解 ---------- */
+.stepper{display:inline-flex;align-items:center;gap:2px;border:1.5px solid var(--line);border-radius:8px;overflow:hidden}
+.stepper button{border:none;background:var(--paper);color:var(--blue);font-weight:700;width:36px;height:36px;font-size:1.15rem}
+.stepper button:hover{background:var(--blue-soft)}
+.stepper .sv{min-width:2em;text-align:center;font-weight:700;font-variant-numeric:tabular-nums}
+.inv{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin:8px 0}
+
+/* ---------- 证书 ---------- */
+.cert-inner{border:3px double var(--red);outline:1.5px solid var(--blue);outline-offset:5px;border-radius:6px;padding:26px 20px;text-align:center;background:var(--card);margin:8px}
+.cert-title{font-size:1.5rem;font-weight:800;letter-spacing:.5em;padding-left:.5em;color:var(--red);margin-bottom:10px}
+.cert-date{color:var(--muted);margin-top:12px;font-size:.9rem}
+
+.tb{font-size:.78rem;color:var(--muted)}
+.arc{fill:none;stroke:var(--red);stroke-width:2.2}
+.dot-pt{fill:var(--amber);stroke:#fff;stroke-width:2;cursor:grab}
+.handle-hit{fill:transparent;cursor:grab}
+.tamber{fill:var(--amber);font-size:12.5px;font-weight:600}
+
 @media (max-width:560px){
   .pagehead h2{font-size:1.25rem}
   .hero h1{font-size:1.6rem}
@@ -237,13 +255,15 @@ table.verdict .no{color:var(--red);font-weight:700}
       <svg viewBox="0 0 120 56" aria-hidden="true"><line x1="8" y1="48" x2="112" y2="8" class="fline"/><circle cx="36" cy="37" r="4" class="dot-g"/><path d="M60 28 h20 v-8" class="slope"/></svg>
       <h3>函数探索器</h3>
       <p>破解五台神秘机器的规则，再到实验台上拖动滑块，亲眼看懂 k 和 b 到底管什么。</p>
+      <span class="tb">课本对应：初二「一次函数」</span>
       <span class="badge" id="badge-func">未开始</span>
     </a>
     <a class="mod" href="#formula">
       <span class="exp">实验二</span>
       <svg viewBox="0 0 120 56" aria-hidden="true"><rect x="14" y="8" width="28" height="28" class="f-blue"/><rect x="44" y="8" width="14" height="28" class="f-amber"/><rect x="14" y="38" width="28" height="12" class="f-amber"/><rect x="44" y="38" width="14" height="12" class="f-green"/><rect x="76" y="8" width="30" height="42" class="outline"/></svg>
       <h3>公式拼图</h3>
-      <p>完全平方、平方差——不背公式，亲手把它们"拼"出来，还能学会一手口算绝活。</p>
+      <p>完全平方、平方差——亲手把公式"拼"出来；再把拼图倒过来玩，因式分解一次看穿。</p>
+      <span class="tb">课本对应：初二「整式乘法与因式分解」</span>
       <span class="badge" id="badge-formula">未开始</span>
     </a>
     <a class="mod" href="#tri">
@@ -251,6 +271,7 @@ table.verdict .no{color:var(--red);font-weight:700}
       <svg viewBox="0 0 120 56" aria-hidden="true"><polygon points="10,50 70,50 44,12" class="tri-main"/><polygon points="66,50 112,50 96,22" class="tri-ghost"/><circle cx="44" cy="12" r="5" class="handle"/></svg>
       <h3>全等三角形实验室</h3>
       <p>拖动一个点，亲手验证 SSS、SAS、ASA 为什么成立——以及 SSA 为什么骗人。</p>
+      <span class="tb">课本对应：初二「全等三角形」</span>
       <span class="badge" id="badge-tri">未开始</span>
     </a>
     <a class="mod" href="#guide">
@@ -259,6 +280,20 @@ table.verdict .no{color:var(--red);font-weight:700}
       <p>这个实验室怎么用效果最好、家长该问什么、不该做什么。开始前请先读一遍。</p>
       <span class="badge">3 分钟读完</span>
     </a>
+  </div>
+  <div class="card" id="gradCard" hidden>
+    <h3>🎖 全部实验完成 · 领取毕业证书</h3>
+    <div class="guessrow" style="justify-content:flex-start">我的名字：<input class="mini" id="gradName" style="width:130px"> <button class="btn" id="gradBtn">生成证书</button></div>
+    <div id="cert" hidden>
+      <div class="cert-inner">
+        <p class="cert-title">毕业证书</p>
+        <p>兹证明 <b id="certName"></b> 同学</p>
+        <p>已在「数学思维实验室」亲手完成全部实验：</p>
+        <p>破解函数机器 · 拼出乘法公式 · 逆向拼出因式分解 · 验证全等判定</p>
+        <p>特授予<b style="color:var(--red)">「不背公式」</b>荣誉。</p>
+        <p class="cert-date" id="certDate"></p>
+      </div>
+    </div>
   </div>
   <footer>每个实验的终点都一样：把你发现的规律，用自己的话讲给别人听。讲得清楚，才是真的懂了。</footer>
 </section>
@@ -295,6 +330,12 @@ table.verdict .no{color:var(--red);font-weight:700}
     <details class="think"><summary>卡住了？破译小抄在这里</summary>
       <p>两把万能钥匙：先投 <b>0</b>——出来的数就是规则里的「+ b」；再投 <b>1</b>——输出比 b 多出来的部分就是 k。想一想为什么，然后去验证。</p>
     </details>
+    <div id="bonusArea" hidden>
+      <p class="msg info" style="margin-top:14px">🎓 破解者进阶考验（不投币，只动脑）：</p>
+      <div class="guessrow">① 预测：投入 <b>9</b>，会吐出 <input class="mini" id="predIn" type="number" step="any"> <button class="btn small" id="predBtn">检查</button> <span class="tgreen" id="predMark" style="fill:none;color:var(--green);font-weight:700"></span></div>
+      <div class="guessrow">② 反向：机器吐出了 <b id="revY"></b>，当时投入的是 <input class="mini" id="revIn" type="number" step="any"> <button class="btn small" id="revBtn">检查</button> <span id="revMark" style="color:var(--green);font-weight:700"></span></div>
+      <p class="msg" id="bonusMsg"></p>
+    </div>
   </div>
 
   <div class="callout green" id="funcConcept" hidden>
@@ -309,7 +350,7 @@ table.verdict .no{color:var(--red);font-weight:700}
 
   <div class="card">
     <h3>第二站 · 一次函数实验台</h3>
-    <p class="msg info">规则形如 <span class="math">y = kx + b</span> 的机器，画在坐标系里就是一条直线。拖动滑块，观察直线怎么变。</p>
+    <p class="msg info">规则形如 <span class="math">y = kx + b</span> 的机器，画在坐标系里就是一条直线。拖动滑块，观察直线怎么变。图上的<b style="color:var(--amber)">橙色圆点</b>是机器的一次「投入→吐出」，可以沿直线拖动它——这条直线，其实就是把机器所有的输入输出记录一次性画了出来。</p>
     <div class="stage"><svg id="linsvg" viewBox="0 0 560 440" role="img" aria-label="一次函数图像实验台"></svg></div>
     <p style="text-align:center;font-size:1.2rem;margin:6px 0"><span class="math" id="eqn"></span></p>
     <div class="sliderrow"><label><span class="math">k</span>（斜率）</label><input type="range" id="kS" min="-5" max="5" step="0.5" value="1"><span class="val" id="kV">1</span></div>
@@ -368,6 +409,22 @@ table.verdict .no{color:var(--red);font-weight:700}
     公式不是用来默写的，是用来<b>偷懒</b>的——数学家都是高明的偷懒专家。</p>
   </details>
 
+  <div class="card">
+    <h3>拼图三 · 倒着玩：因式分解 <span class="math">x² + bx + c = (x+m)(x+n)</span></h3>
+    <p class="msg info">前两个拼图是「乘出去」，现在反过来。给你一堆积木——1 块 <span class="math">x²</span> 大方板、b 条 <span class="math">x</span> 长条、c 个小方块——调整长方形的两条边，把积木<b>不多不少、严丝合缝</b>全部用上。</p>
+    <div class="mdots" id="fxdots"></div>
+    <div class="stage"><svg id="fxsvg" viewBox="0 0 480 420" role="img" aria-label="因式分解积木拼图"></svg></div>
+    <div class="sliderrow" style="justify-content:center">
+      <label>竖边 <span class="math">x +</span></label>
+      <span class="stepper"><button id="fmMinus" aria-label="竖边减一">−</button><span class="sv" id="fmV">1</span><button id="fmPlus" aria-label="竖边加一">+</button></span>
+      <label style="min-width:auto">　横边 <span class="math">x +</span></label>
+      <span class="stepper"><button id="fnMinus" aria-label="横边减一">−</button><span class="sv" id="fnV">1</span><button id="fnPlus" aria-label="横边加一">+</button></span>
+    </div>
+    <div class="inv" id="fxInv"></div>
+    <p class="msg" id="fxMsg" style="text-align:center"></p>
+    <div class="callout" id="fxConcept" hidden><b>你刚才做的事，课本里叫「因式分解」。</b>它不是新知识，就是乘法拼图倒着玩：找两个数，<b>加起来是 b</b>（长条正好用完）、<b>乘起来是 c</b>（方块正好用完）。以后学「十字相乘法」时你会发现——那只是这个拼图的速记符号。</div>
+  </div>
+
   <div class="speak"><b>📣 讲给爸妈听：</b>考考爸妈「103 × 97 等于几」，限时三秒。他们算不出来的话，把平方差拼图讲给他们听，再教会他们这个绝活。</div>
 </section>
 
@@ -380,7 +437,7 @@ table.verdict .no{color:var(--red);font-weight:700}
     <div class="lvltabs" id="lvltabs"></div>
     <div class="given" id="triGiven"></div>
     <div class="stage"><svg id="trisvg" viewBox="0 0 600 400" role="img" aria-label="全等三角形拖动实验"></svg></div>
-    <p class="hint-drag">按住红色的点 C 拖动（手机上直接用手指拖）</p>
+    <p class="hint-drag">按住红色的点 C 拖动（手机用手指拖；也可以点选红点后用键盘方向键微调）</p>
     <div class="chips" id="triChips"></div>
     <p class="msg" id="triMsg"></p>
     <p><span class="chip" id="triFound"></span>　<button class="btn small ghost" id="triReset">重玩本关</button></p>
@@ -399,6 +456,10 @@ table.verdict .no{color:var(--red);font-weight:700}
     </table>
     <p style="margin-top:10px">以后做证明题，写下「SAS」三个字母时，你脑子里会浮现出那个<b>无处可逃的点 C</b>——这就是懂和背的区别。</p>
   </div>
+
+  <details class="think"><summary>💭 想通了 SSA，再想一个高级问题：为什么直角三角形却有 HL 定理？</summary>
+    <p>HL（斜边 + 直角边）看条件的形状，其实就是 SSA——两条边加一个<b>不是夹角</b>的角，只不过那个角是 90°。回到第 4 关想象把 ∠A 拖成直角：圆规画的那个圆本来和射线交两次，可两个交点一个在 AB 上方、一个在下方——直角时上半平面只剩一个了。<b>HL 就是唯一能"钉死"三角形的 SSA 特例</b>，所以课本才专门给它起了名字。能把这一段讲明白，你对全等的理解就到顶了。</p>
+  </details>
 
   <details class="think"><summary>💭 想一想：为什么「面积相等」不能判定全等？</summary>
     <p>底 6 高 4 的三角形和底 8 高 3 的三角形，面积都是 12，形状却完全不同。「全等」要求的是<b>形状和大小都一模一样</b>（能完全重合），比面积相等严格得多。判定定理的本质，就是找出「能把三角形钉死」的最少条件。</p>
@@ -469,14 +530,28 @@ function badges(){
   const bf = $('#badge-func');
   bf.textContent = m === 0 && !prog.lab ? '未开始' : `已破解 ${m}/5 台机器${prog.lab ? ' · 三连星 ⭐' : ''}`;
   bf.classList.toggle('done', m === 5);
-  const f = (prog.formula.sq?1:0) + (prog.formula.df?1:0);
+  const fxAll = (prog.formula.fxdone||[]).length === 4;
+  const f = (prog.formula.sq?1:0) + (prog.formula.df?1:0) + (fxAll?1:0);
   const bfo = $('#badge-formula');
-  bfo.textContent = f === 0 ? '未开始' : `${f}/2 个拼图完成`;
-  bfo.classList.toggle('done', f === 2);
+  bfo.textContent = f === 0 ? '未开始' : `${f}/3 个拼图完成`;
+  bfo.classList.toggle('done', f === 3);
   const bt = $('#badge-tri');
   bt.textContent = prog.tri.length === 0 ? '未开始' : `${prog.tri.length}/4 关通过`;
   bt.classList.toggle('done', prog.tri.length === 4);
+  const allDone = m === 5 && f === 3 && prog.tri.length === 4;
+  $('#gradCard').hidden = !allDone;
+  if (allDone && prog.name) showCert(prog.name);
 }
+function showCert(name){
+  $('#certName').textContent = name;
+  $('#certDate').textContent = '颁发日期：' + new Date().toLocaleDateString('zh-CN');
+  $('#cert').hidden = false;
+}
+$('#gradBtn').onclick = ()=>{
+  const n = $('#gradName').value.trim();
+  if (!n) return;
+  prog.name = n; save(); showCert(n);
+};
 
 /* ---------- 路由 ---------- */
 const PAGES = ['home','func','formula','tri','guide'];
@@ -535,7 +610,37 @@ function renderMachine(){
   $('#gk').value = ''; $('#gb').value = '';
   msg('machineMsg', solved ? `已破解！规则是 ${ruleText(m)}` : '', 'good');
   $('#funcConcept').hidden = prog.machines.length < 5;
+  $('#bonusArea').hidden = !solved;
+  if (solved){
+    $('#revY').textContent = fmt(mfn()(6));
+    $('#predMark').textContent = bonus[mi].p ? '✓' : '';
+    $('#revMark').textContent = bonus[mi].r ? '✓' : '';
+    $('#predIn').value = ''; $('#revIn').value = '';
+    msg('bonusMsg','','');
+  }
 }
+const bonus = MACHINES.map(()=>({p:false, r:false}));
+function mfn(){ const m = MACHINES[mi]; return m.special ? m.fn : (x=>m.k*x+m.b); }
+$('#predBtn').onclick = ()=>{
+  const v = parseFloat($('#predIn').value);
+  if (isNaN(v)) return msg('bonusMsg','先填上你的预测。','bad');
+  if (Math.abs(v - mfn()(9)) < 1e-9){
+    bonus[mi].p = true; $('#predMark').textContent='✓';
+    msg('bonusMsg','✓ 预测正确！这就是函数的用途——不用真的投币，也知道结果。','good');
+  } else msg('bonusMsg','再想想——把 9 代入你破解出的规则，算一算。','bad');
+};
+$('#revBtn').onclick = ()=>{
+  const v = parseFloat($('#revIn').value);
+  if (isNaN(v)) return msg('bonusMsg','先填上你的答案。','bad');
+  const f = mfn();
+  if (Math.abs(f(v) - f(6)) < 1e-9){
+    bonus[mi].r = true; $('#revMark').textContent='✓';
+    const sp = MACHINES[mi].special;
+    msg('bonusMsg', sp && Math.abs(v+6)<1e-9 ? '✓ 对！而且 6 也可以——正向唯一，反向却不一定唯一。这就是为什么方程可能有两个解。'
+      : sp ? '✓ 对！但其实还有一个答案也行——想想是谁？（提示：负数）'
+      : '✓ 反向破解成功！「已知输出、倒推输入」——你刚做的这件事，课本里叫解方程。','good');
+  } else msg('bonusMsg','不对——反着推：吐出这个数，得投入几？','bad');
+};
 function msg(id, text, cls){ const el = $('#'+id); el.textContent = text; el.className = 'msg ' + (cls||''); }
 
 $('#feedBtn').onclick = ()=>{
@@ -606,7 +711,20 @@ let lin = {};
   lin.dot = mk('circle',{r:6,class:'dot-g'},g);
   lin.dotL = mk('text',{class:'tgreen'},g);
   lin.star = mk('text',{class:'star','text-anchor':'middle',text:'⭐'},linsvg);
+  lin.ptHit = mk('circle',{r:18,class:'handle-hit'},linsvg);
+  lin.pt = mk('circle',{r:7,class:'dot-pt'},linsvg);
+  lin.ptL = mk('text',{class:'tamber','text-anchor':'middle'},linsvg);
 })();
+let ptx = 3, ptDragging = false;
+lin.ptHit.addEventListener('pointerdown', e=>{ ptDragging = true; lin.ptHit.setPointerCapture(e.pointerId); e.preventDefault(); });
+lin.ptHit.addEventListener('pointermove', e=>{
+  if (!ptDragging) return;
+  const r = linsvg.getBoundingClientRect();
+  ptx = Math.max(-8, Math.min(8, ((e.clientX-r.left)*560/r.width - L.cx)/L.u));
+  labUpdate();
+});
+lin.ptHit.addEventListener('pointerup', ()=>{ ptDragging = false; });
+lin.ptHit.addEventListener('pointercancel', ()=>{ ptDragging = false; });
 const TARGETS = [[3,2],[-2,4],[4,-3],[-4,-2],[2,5],[-3,-4]];
 let ti = 0, stars = 0, needMove = true, bSeen = new Set();
 function labUpdate(){
@@ -630,6 +748,19 @@ function labUpdate(){
   }
   const [tx,ty] = TARGETS[ti];
   lin.star.setAttribute('x',lx(tx)); lin.star.setAttribute('y',ly(ty)+8);
+  let px2 = ptx, py = k*px2 + b;
+  if (k !== 0){
+    if (py > 6){ px2 = (6-b)/k; } else if (py < -6){ px2 = (-6-b)/k; }
+    py = k*px2 + b;
+  }
+  const ptVis = Math.abs(py) <= 6.2 && Math.abs(px2) <= 8.2;
+  [lin.pt, lin.ptHit, lin.ptL].forEach(el=>el.style.display = ptVis ? '' : 'none');
+  if (ptVis){
+    lin.pt.setAttribute('cx',lx(px2)); lin.pt.setAttribute('cy',ly(py));
+    lin.ptHit.setAttribute('cx',lx(px2)); lin.ptHit.setAttribute('cy',ly(py));
+    lin.ptL.setAttribute('x',lx(px2)); lin.ptL.setAttribute('y',ly(py) + (py > 5.2 ? 26 : -14));
+    lin.ptL.textContent = `投入 ${fmt(px2)} → 吐出 ${fmt(py)}`;
+  }
   if (k===0) mission('mi1');
   if (k<0) mission('mi2');
   bSeen.add(b); if (bSeen.size>=4) mission('mi3');
@@ -781,6 +912,61 @@ $('#cutBtn').onclick = ()=>{
   dfUpdate(false);
 };
 
+/* ================= 实验二 · 拼图三 因式分解 ================= */
+const FXL = [ {b:5,c:6}, {b:6,c:8}, {b:7,c:12}, {b:8,c:16} ];
+const FX = { u:30, xl:104, ox:46, oy:34 };
+let fxi = 0, fm = 1, fnv = 1;
+const fxsvg = $('#fxsvg');
+function fxPoly(l){ return `x² + ${l.b}x + ${l.c}`; }
+function fxDots(){
+  const d = $('#fxdots'); d.innerHTML = '';
+  FXL.forEach((l,i)=>{
+    const btn = document.createElement('button');
+    const done = (prog.formula.fxdone||[]).includes(i);
+    btn.textContent = (done?'✓ ':'') + fxPoly(l);
+    btn.className = (i===fxi?'cur ':'') + (done?'solved':'');
+    btn.onclick = ()=>{ fxi=i; fm=1; fnv=1; fxRender(); };
+    d.appendChild(btn);
+  });
+}
+function fxRender(){
+  fxDots();
+  const l = FXL[fxi], u = FX.u, xl = FX.xl, X = FX.ox, Y = FX.oy;
+  $('#fmV').textContent = fm; $('#fnV').textContent = fnv;
+  fxsvg.innerHTML = '';
+  const W = xl + fnv*u, H = xl + fm*u;
+  fxsvg.setAttribute('viewBox', `0 0 ${X+W+30} ${Y+H+20}`);
+  const rect = (x,y,w,h,cls)=>mk('rect',{x:X+x,y:Y+y,width:w,height:h,class:cls},fxsvg);
+  rect(0,0,xl,xl,'f-blue');
+  mk('text',{x:X+xl/2,y:Y+xl/2+6,class:'t b','text-anchor':'middle',text:'x²'},fxsvg);
+  for(let i=0;i<fnv;i++) rect(xl+i*u,0,u,xl,'f-amber');
+  for(let j=0;j<fm;j++) rect(0,xl+j*u,xl,u,'f-amber');
+  for(let i=0;i<fnv;i++) for(let j=0;j<fm;j++) rect(xl+i*u,xl+j*u,u,u,'f-green');
+  mk('text',{x:X+xl/2,y:Y-10,class:'tm','text-anchor':'middle',text:'x'},fxsvg);
+  mk('text',{x:X+xl+fnv*u/2,y:Y-10,class:'tm','text-anchor':'middle',text:String(fnv)},fxsvg);
+  mk('text',{x:X-14,y:Y+xl/2+5,class:'tm','text-anchor':'end',text:'x'},fxsvg);
+  mk('text',{x:X-14,y:Y+xl+fm*u/2+5,class:'tm','text-anchor':'end',text:String(fm)},fxsvg);
+  const usedS = fm+fnv, usedU = fm*fnv;
+  const okS = usedS===l.b, okU = usedU===l.c;
+  const diff = (used,have)=> used===have ? '' : `（${used>have?'超了':'还缺'} ${Math.abs(used-have)}）`;
+  $('#fxInv').innerHTML =
+    `<span class="chip${okS?' ok':''}">长条 x：已用 ${usedS} / 库存 ${l.b}${diff(usedS,l.b)}</span>` +
+    `<span class="chip${okU?' ok':''}">小方块：已用 ${usedU} / 库存 ${l.c}${diff(usedU,l.c)}</span>`;
+  if (okS && okU){
+    msg('fxMsg', `🎉 严丝合缝！${fxPoly(l)} = (x + ${fm})(x + ${fnv})` + (l.c===16 ? '　两条边一样长——这不就是完全平方嘛！' : ''), 'good');
+    prog.formula.fxdone = prog.formula.fxdone || [];
+    if (!prog.formula.fxdone.includes(fxi)){ prog.formula.fxdone.push(fxi); save(); fxDots(); }
+    $('#fxConcept').hidden = (prog.formula.fxdone||[]).length < FXL.length;
+  } else {
+    msg('fxMsg', '调整两条边，让两个库存指标同时变绿。', 'info');
+    $('#fxConcept').hidden = (prog.formula.fxdone||[]).length < FXL.length;
+  }
+}
+$('#fmMinus').onclick = ()=>{ fm=Math.max(1,fm-1); fxRender(); };
+$('#fmPlus').onclick  = ()=>{ fm=Math.min(6,fm+1); fxRender(); };
+$('#fnMinus').onclick = ()=>{ fnv=Math.max(1,fnv-1); fxRender(); };
+$('#fnPlus').onclick  = ()=>{ fnv=Math.min(6,fnv+1); fxRender(); };
+
 /* ================= 实验三 · 全等三角形 ================= */
 const TA = {x:2, y:1.2}, TB = {x:10, y:1.2};
 const TU = 50, TH = 400;
@@ -818,6 +1004,8 @@ let tri = {};
   tri.aids = mk('g',{},trisvg);
   tri.ghosts = mk('g',{},trisvg);
   tri.poly = mk('polygon',{class:'tri-main'},trisvg);
+  tri.arcA = mk('path',{class:'arc'},trisvg);
+  tri.arcB = mk('path',{class:'arc'},trisvg);
   mk('circle',{cx:tx2(TA.x),cy:ty2(TA.y),r:5,fill:'var(--ink)'},trisvg);
   mk('circle',{cx:tx2(TB.x),cy:ty2(TB.y),r:5,fill:'var(--ink)'},trisvg);
   mk('text',{x:tx2(TA.x)-16,y:ty2(TA.y)+18,class:'tm',text:'A'},trisvg);
@@ -826,6 +1014,7 @@ let tri = {};
   tri.halo = mk('circle',{r:16,class:'handle-halo pulse'},trisvg);
   tri.handle = mk('circle',{r:8,class:'handle'},trisvg);
   tri.clab = mk('text',{class:'tm',text:'C'},trisvg);
+  tri.hit = mk('circle',{r:26,class:'handle-hit',tabindex:'0','aria-label':'拖动点 C'},trisvg);
 })();
 function dist(p,q){ return Math.hypot(p.x-q.x, p.y-q.y); }
 function angleA(){ return Math.atan2(C.y-TA.y, C.x-TA.x)*180/Math.PI; }
@@ -882,7 +1071,19 @@ function triRender(){
   tri.poly.setAttribute('points',`${tx2(TA.x)},${ty2(TA.y)} ${tx2(TB.x)},${ty2(TB.y)} ${tx2(C.x)},${ty2(C.y)}`);
   tri.handle.setAttribute('cx',tx2(C.x)); tri.handle.setAttribute('cy',ty2(C.y));
   tri.halo.setAttribute('cx',tx2(C.x)); tri.halo.setAttribute('cy',ty2(C.y));
+  tri.hit.setAttribute('cx',tx2(C.x)); tri.hit.setAttribute('cy',ty2(C.y));
   tri.clab.setAttribute('x',tx2(C.x)+12); tri.clab.setAttribute('y',ty2(C.y)-10);
+  const ar = 34;
+  if (lv.cons.some(c=>c.t==='angA')){
+    const th = Math.atan2(C.y-TA.y, C.x-TA.x);
+    tri.arcA.setAttribute('d', `M ${tx2(TA.x)+ar} ${ty2(TA.y)} A ${ar} ${ar} 0 0 0 ${tx2(TA.x)+ar*Math.cos(th)} ${ty2(TA.y)-ar*Math.sin(th)}`);
+    tri.arcA.style.display = '';
+  } else tri.arcA.style.display = 'none';
+  if (lv.cons.some(c=>c.t==='angB')){
+    const dir = Math.PI - angleB()*Math.PI/180;
+    tri.arcB.setAttribute('d', `M ${tx2(TB.x)-ar} ${ty2(TB.y)} A ${ar} ${ar} 0 0 1 ${tx2(TB.x)+ar*Math.cos(dir)} ${ty2(TB.y)-ar*Math.sin(dir)}`);
+    tri.arcB.style.display = '';
+  } else tri.arcB.style.display = 'none';
   tri.ghosts.innerHTML = '';
   found.forEach((s,i)=>{
     mk('polygon',{points:`${tx2(TA.x)},${ty2(TA.y)} ${tx2(TB.x)},${ty2(TB.y)} ${tx2(s.x)},${ty2(s.y)}`,class:'tri-ghost'},tri.ghosts);
@@ -923,13 +1124,13 @@ function svgPoint(e){
   const r = trisvg.getBoundingClientRect();
   return { x:(e.clientX-r.left)*600/r.width/TU, y:(TH-(e.clientY-r.top)*400/r.height)/TU };
 }
-tri.handle.addEventListener('pointerdown', e=>{
+tri.hit.addEventListener('pointerdown', e=>{
   dragging = true; dragged = true;
   tri.halo.classList.remove('pulse');
-  tri.handle.setPointerCapture(e.pointerId);
+  tri.hit.setPointerCapture(e.pointerId);
   e.preventDefault();
 });
-tri.handle.addEventListener('pointermove', e=>{
+tri.hit.addEventListener('pointermove', e=>{
   if (!dragging) return;
   const p = svgPoint(e);
   C.x = Math.max(0.5, Math.min(11.5, p.x));
@@ -937,8 +1138,21 @@ tri.handle.addEventListener('pointermove', e=>{
   trySnapRecord();
   triRender();
 });
-tri.handle.addEventListener('pointerup', ()=>{ dragging = false; });
-tri.handle.addEventListener('pointercancel', ()=>{ dragging = false; });
+tri.hit.addEventListener('pointerup', ()=>{ dragging = false; });
+tri.hit.addEventListener('pointercancel', ()=>{ dragging = false; });
+tri.hit.addEventListener('keydown', e=>{
+  const st = e.shiftKey ? 0.5 : 0.1;
+  let mv = null;
+  if (e.key==='ArrowLeft') mv=[-st,0]; else if (e.key==='ArrowRight') mv=[st,0];
+  else if (e.key==='ArrowUp') mv=[0,st]; else if (e.key==='ArrowDown') mv=[0,-st];
+  if (!mv) return;
+  e.preventDefault();
+  tri.halo.classList.remove('pulse');
+  C.x = Math.max(0.5, Math.min(11.5, C.x+mv[0]));
+  C.y = Math.max(1.7, Math.min(7.6, C.y+mv[1]));
+  trySnapRecord();
+  triRender();
+});
 $('#triReset').onclick = ()=>{
   found = []; C = {x:6,y:4.5};
   $('#triConc').hidden = true;
@@ -958,7 +1172,7 @@ $('#resetProg').onclick = function(){
   prog = { machines:[], tri:[], formula:{} };
   save();
   this.textContent = '已清空 ✓';
-  renderMachine(); loadLevel();
+  renderMachine(); loadLevel(); fxRender();
 };
 
 /* ---------- 启动 ---------- */
@@ -967,6 +1181,7 @@ renderMachine();
 labUpdate();
 sqUpdate();
 dfUpdate(true);
+fxRender();
 loadLevel();
 route();
 </script>
