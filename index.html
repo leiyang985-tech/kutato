@@ -221,6 +221,23 @@ table.verdict .no{color:var(--red);font-weight:700}
 .handle-hit{fill:transparent;cursor:grab}
 .tamber{fill:var(--amber);font-size:12.5px;font-weight:600}
 
+/* ---------- 声音开关 / 小助手 / 彩带 ---------- */
+.tgl{border:1.5px solid var(--line);background:var(--card);border-radius:8px;padding:2px 9px;font-size:1rem;line-height:1.5}
+.tgl.off{opacity:.4;filter:grayscale(1)}
+.btn:active,.tgl:active,.stepper button:active{transform:translateY(1px)}
+.outval{font-size:1.5rem;font-weight:800;color:var(--red);min-height:1.5em;font-variant-numeric:tabular-nums}
+.outval.pop{animation:opop .45s ease}
+@keyframes opop{0%{transform:scale(.4);opacity:0}60%{transform:scale(1.15)}100%{transform:none;opacity:1}}
+.pagenav{display:flex;justify-content:space-between;gap:12px;margin-top:26px;font-size:.95rem}
+.pagenav a{text-decoration:none;font-weight:600}
+#helper{position:fixed;right:14px;bottom:14px;z-index:50;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+#helperBtn{width:54px;height:54px;border-radius:50%;border:2px solid var(--blue);background:var(--card);font-size:1.7rem;box-shadow:var(--shadow);transition:transform .15s ease}
+#helperBtn:hover{transform:scale(1.08) rotate(-6deg)}
+#helperBubble{max-width:min(300px,78vw);background:var(--card);border:1.5px solid var(--blue);border-radius:14px 14px 4px 14px;padding:10px 14px;box-shadow:var(--shadow);font-size:.92rem;animation:bubblein .25s ease}
+@keyframes bubblein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.confetti{position:fixed;top:-14px;width:10px;height:14px;z-index:60;border-radius:2px;opacity:.9;animation:cfall 1.9s ease-in forwards;pointer-events:none}
+@keyframes cfall{to{transform:translate(var(--dx),105vh) rotate(540deg);opacity:.7}}
+
 @media (max-width:560px){
   .pagehead h2{font-size:1.25rem}
   .hero h1{font-size:1.6rem}
@@ -237,7 +254,7 @@ table.verdict .no{color:var(--red);font-weight:700}
 <header id="topbar">
   <a class="logo" href="#home">数学思维实验室</a>
   <span class="tag">先动手 · 再明白</span>
-  <nav><a href="#home">首页</a><a href="#guide">给家长</a></nav>
+  <nav><a href="#home">首页</a><a href="#guide">给家长</a><button class="tgl" id="sndTgl" title="音效开关" aria-label="音效开关">🔊</button><button class="tgl" id="voxTgl" title="语音朗读开关" aria-label="语音朗读开关">🗣</button></nav>
 </header>
 
 <main>
@@ -312,9 +329,18 @@ table.verdict .no{color:var(--red);font-weight:700}
       <div class="q" id="machineQ">?</div>
       <div class="gear">⚙</div>
       <div class="slot">↓ 吐出口 ↓</div>
+      <div class="outval" id="outVal">&nbsp;</div>
+    </div>
+    <div class="feedrow" id="quickFeeds">
+      <span style="color:var(--muted)">快速投币：</span>
+      <button class="btn small ghost qf" data-v="0">0</button>
+      <button class="btn small ghost qf" data-v="1">1</button>
+      <button class="btn small ghost qf" data-v="2">2</button>
+      <button class="btn small ghost qf" data-v="5">5</button>
+      <button class="btn small ghost qf" data-v="-3">−3</button>
     </div>
     <div class="feedrow">
-      <span class="math">x</span> = <input type="number" id="feedIn" step="any" placeholder="投个数字">
+      自己选数：<span class="math">x</span> = <input type="number" id="feedIn" step="any" placeholder="任意数字">
       <button class="btn" id="feedBtn">投进去</button>
     </div>
     <table class="io"><thead><tr><th>投入 <span class="math">x</span></th><th>吐出 <span class="math">y</span></th></tr></thead><tbody id="ioBody"></tbody></table>
@@ -368,6 +394,7 @@ table.verdict .no{color:var(--red);font-weight:700}
   </details>
 
   <div class="speak"><b>📣 讲给爸妈听：</b>只用「自动售货机」和「走 1 升 k」这两个比喻，向爸妈解释什么是函数、什么是斜率。他们听懂了，这一关才算真的通了。</div>
+  <p class="pagenav"><a href="#home">⌂ 返回首页</a><a href="#formula">下一个实验：公式拼图 →</a></p>
 </section>
 
 <!-- ================= 实验二：公式拼图 ================= -->
@@ -426,6 +453,7 @@ table.verdict .no{color:var(--red);font-weight:700}
   </div>
 
   <div class="speak"><b>📣 讲给爸妈听：</b>考考爸妈「103 × 97 等于几」，限时三秒。他们算不出来的话，把平方差拼图讲给他们听，再教会他们这个绝活。</div>
+  <p class="pagenav"><a href="#home">⌂ 返回首页</a><a href="#tri">下一个实验：全等三角形 →</a></p>
 </section>
 
 <!-- ================= 实验三：全等三角形 ================= -->
@@ -466,6 +494,7 @@ table.verdict .no{color:var(--red);font-weight:700}
   </details>
 
   <div class="speak"><b>📣 讲给爸妈听：</b>用第 4 关的发现向爸妈解释：为什么课本上有 SAS 定理，却没有 SSA 定理。能讲清"同样的条件画出两个不同三角形"，你对全等的理解就超过大部分同学了。</div>
+  <p class="pagenav"><a href="#home">⌂ 返回首页</a><a href="#guide">最后一页：给家长的说明 →</a></p>
 </section>
 
 <!-- ================= 给家长 ================= -->
@@ -497,9 +526,15 @@ table.verdict .no{color:var(--red);font-weight:700}
     <p>实验室只是入口。真正的日常是：作业照做，但每天挑一道最难的题做三分钟复盘（「这题考什么概念？我卡在哪？」）；每周一次 20 分钟讲题时间。实验室教会孩子「什么叫真的懂」，日常复盘把这个标准用到每一天。</p>
     <p style="margin-top:18px"><button class="btn small ghost" id="resetProg">清空全部实验进度</button></p>
   </div>
+  <p class="pagenav"><a href="#home">⌂ 返回首页</a><a href="#func">开始实验一 →</a></p>
 </section>
 
 </main>
+
+<div id="helper">
+  <div id="helperBubble" hidden></div>
+  <button id="helperBtn" aria-label="学习小助手">🦉</button>
+</div>
 </div>
 
 <script>
@@ -551,17 +586,126 @@ $('#gradBtn').onclick = ()=>{
   const n = $('#gradName').value.trim();
   if (!n) return;
   prog.name = n; save(); showCert(n);
+  sfx('fanfare'); confetti();
+  speak(`恭喜${n}同学，毕业证书已颁发！你已经拥有不背公式的荣誉。`);
 };
 
 /* ---------- 路由 ---------- */
 const PAGES = ['home','func','formula','tri','guide'];
+const seenTips = {};
 function route(){
   let h = (location.hash || '#home').slice(1);
   if (!PAGES.includes(h)) h = 'home';
   PAGES.forEach(p => $('#page-'+p).classList.toggle('active', p === h));
   window.scrollTo(0,0);
+  if (!seenTips[h]){ seenTips[h] = true; say(pageTip(h), {voice:false, stay:9000}); }
 }
 addEventListener('hashchange', route);
+
+/* ---------- 音效（Web Audio 合成，无素材、离线可用） ---------- */
+let sndOn = prog.snd !== false;
+let voxOn = prog.vox === true;
+const AudioFX = (()=>{
+  let ctx = null;
+  function ac(){
+    if (!ctx){ try{ ctx = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){ return null; } }
+    if (ctx && ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  }
+  function tone(freq, t0, dur, type, vol){
+    const c = ac(); if (!c) return;
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = type || 'sine'; o.frequency.value = freq;
+    const t = c.currentTime + t0;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol || 0.07, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(c.destination);
+    o.start(t); o.stop(t + dur + 0.05);
+  }
+  return {
+    drop(){ tone(520,0,.12,'triangle'); tone(300,.09,.16,'triangle'); },
+    good(){ tone(523,0,.15); tone(659,.08,.15); tone(784,.16,.28); },
+    bad(){ tone(220,0,.18,'sawtooth',.025); tone(196,.11,.22,'sawtooth',.025); },
+    star(){ tone(880,0,.1); tone(1175,.07,.1); tone(1568,.14,.24); },
+    snap(){ tone(660,0,.08,'square',.045); tone(880,.06,.12,'square',.045); },
+    fanfare(){ [523,659,784,1047].forEach((f,i)=>tone(f,i*.09,.22)); tone(1319,.4,.45); },
+    tick(){ tone(700,0,.05,'square',.03); }
+  };
+})();
+function sfx(n){ if (sndOn){ try{ AudioFX[n](); }catch(e){} } }
+
+/* ---------- 语音朗读（系统 TTS） ---------- */
+function speak(t){
+  if (!voxOn || !('speechSynthesis' in window)) return;
+  try{
+    const clean = String(t).replace(/[🎉🌟⭐✓✗×📣💭🎓🏆🎖🧩⚙⌂↩️✂️🔊🔇🗣🦉]/g,'').replace(/——/g,'，');
+    if (!clean.trim()) return;
+    const u = new SpeechSynthesisUtterance(clean);
+    u.lang = 'zh-CN'; u.rate = 1.05;
+    const v = speechSynthesis.getVoices().find(v=>/^zh/i.test(v.lang));
+    if (v) u.voice = v;
+    speechSynthesis.cancel();
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+try{ speechSynthesis.getVoices(); }catch(e){}
+
+/* ---------- 小助手 ---------- */
+let helperTimer = null;
+function say(text, opts){
+  opts = opts || {};
+  const b = $('#helperBubble');
+  b.textContent = text; b.hidden = false;
+  clearTimeout(helperTimer);
+  helperTimer = setTimeout(()=>{ b.hidden = true; }, opts.stay || 8000);
+  if (opts.voice !== false) speak(text);
+}
+function pageTip(h){
+  const tips = {
+    home:'你好，我是实验室的小助手！建议从实验一开始。记住守则：慢慢玩，先自己想，再点提示。',
+    func:'先投数字、观察输出、再猜规则。悄悄告诉你：0 和 1 是两把万能钥匙。',
+    formula:'拖动滑块看拼图怎么变，再点按钮拆开或重拼。拼图三要让两个库存都正好用完哦。',
+    tri:'按住红色的点 C 慢慢拖，让所有指标变绿。第 4 关藏着一个大秘密：要找到两个位置才算过关！',
+    guide:'这一页是给爸爸妈妈看的。孩子讲题的时候，只需要问三句话：为什么？怎么想到的？能举个例子吗？'
+  };
+  return tips[h] || tips.home;
+}
+$('#helperBtn').onclick = ()=>{
+  const b = $('#helperBubble');
+  if (!b.hidden){ b.hidden = true; return; }
+  sfx('tick');
+  say(pageTip((location.hash || '#home').slice(1)), {stay:12000});
+};
+
+/* ---------- 彩带 ---------- */
+function confetti(){
+  if (RM) return;
+  const colors = ['#2e5fb7','#cf4a41','#2c8c5e','#c07a10'];
+  for (let i=0; i<26; i++){
+    const p = document.createElement('div');
+    p.className = 'confetti';
+    p.style.left = (15 + Math.random()*70) + 'vw';
+    p.style.background = colors[i % 4];
+    p.style.animationDelay = (Math.random()*0.35) + 's';
+    p.style.setProperty('--dx', ((Math.random()*2-1)*140) + 'px');
+    document.body.appendChild(p);
+    setTimeout(()=>p.remove(), 2400);
+  }
+}
+
+/* ---------- 声音开关 ---------- */
+function syncTgl(){
+  $('#sndTgl').textContent = sndOn ? '🔊' : '🔇';
+  $('#sndTgl').classList.toggle('off', !sndOn);
+  $('#voxTgl').classList.toggle('off', !voxOn);
+}
+$('#sndTgl').onclick = ()=>{ sndOn = !sndOn; prog.snd = sndOn; save(); syncTgl(); if (sndOn) sfx('good'); };
+$('#voxTgl').onclick = ()=>{
+  voxOn = !voxOn; prog.vox = voxOn; save(); syncTgl();
+  if (voxOn) speak('你好！语音朗读已打开，重要的提示我会读给你听。');
+  else { try{ speechSynthesis.cancel(); }catch(e){} }
+};
 
 /* ================= 实验一 · 神秘机器 ================= */
 const MACHINES = [
@@ -608,7 +752,8 @@ function renderMachine(){
     $('#choiceBtn').onclick = guessSpecial;
   }
   $('#gk').value = ''; $('#gb').value = '';
-  msg('machineMsg', solved ? `已破解！规则是 ${ruleText(m)}` : '', 'good');
+  $('#outVal').innerHTML = '&nbsp;';
+  msg('machineMsg', solved ? `已破解！规则是 ${ruleText(m)}` : '', 'good', true);
   $('#funcConcept').hidden = prog.machines.length < 5;
   $('#bonusArea').hidden = !solved;
   if (solved){
@@ -626,8 +771,9 @@ $('#predBtn').onclick = ()=>{
   if (isNaN(v)) return msg('bonusMsg','先填上你的预测。','bad');
   if (Math.abs(v - mfn()(9)) < 1e-9){
     bonus[mi].p = true; $('#predMark').textContent='✓';
+    sfx('good');
     msg('bonusMsg','✓ 预测正确！这就是函数的用途——不用真的投币，也知道结果。','good');
-  } else msg('bonusMsg','再想想——把 9 代入你破解出的规则，算一算。','bad');
+  } else { sfx('bad'); msg('bonusMsg','再想想——把 9 代入你破解出的规则，算一算。','bad'); }
 };
 $('#revBtn').onclick = ()=>{
   const v = parseFloat($('#revIn').value);
@@ -635,41 +781,58 @@ $('#revBtn').onclick = ()=>{
   const f = mfn();
   if (Math.abs(f(v) - f(6)) < 1e-9){
     bonus[mi].r = true; $('#revMark').textContent='✓';
+    sfx('good');
     const sp = MACHINES[mi].special;
     msg('bonusMsg', sp && Math.abs(v+6)<1e-9 ? '✓ 对！而且 6 也可以——正向唯一，反向却不一定唯一。这就是为什么方程可能有两个解。'
       : sp ? '✓ 对！但其实还有一个答案也行——想想是谁？（提示：负数）'
       : '✓ 反向破解成功！「已知输出、倒推输入」——你刚做的这件事，课本里叫解方程。','good');
-  } else msg('bonusMsg','不对——反着推：吐出这个数，得投入几？','bad');
+  } else { sfx('bad'); msg('bonusMsg','不对——反着推：吐出这个数，得投入几？','bad'); }
 };
-function msg(id, text, cls){ const el = $('#'+id); el.textContent = text; el.className = 'msg ' + (cls||''); }
+function msg(id, text, cls, quiet){
+  const el = $('#'+id); el.textContent = text; el.className = 'msg ' + (cls||'');
+  if (!quiet && text && (cls==='good' || cls==='bad')) speak(text);
+}
 
-$('#feedBtn').onclick = ()=>{
-  const v = parseFloat($('#feedIn').value);
-  if (isNaN(v)) return msg('machineMsg','先在左边输入一个数字。','bad');
+function doFeed(v){
+  if (isNaN(v)) return msg('machineMsg','先输入一个数字。','bad');
   if (Math.abs(v) > 1000) return msg('machineMsg','太大啦，投一个 −100 到 100 之间的数试试。','bad');
   const m = MACHINES[mi];
   const y = m.special ? m.fn(v) : m.k*v + m.b;
   feeds[mi].unshift([v,y]);
+  sfx('drop');
   const box = $('#machineBox');
   box.classList.remove('crunch'); void box.offsetWidth; box.classList.add('crunch');
+  const ov = $('#outVal');
+  ov.textContent = fmt(y);
+  ov.classList.remove('pop'); void ov.offsetWidth; ov.classList.add('pop');
   const tb = $('#ioBody');
   const tr = document.createElement('tr'); tr.className='new';
   tr.innerHTML = `<td>${fmt(v)}</td><td>${fmt(y)}</td>`;
   tb.insertBefore(tr, tb.firstChild);
-  msg('machineMsg','', '');
-  $('#feedIn').value=''; $('#feedIn').focus();
-};
+  msg('machineMsg','','');
+  if (feeds[mi].length === 5 && !prog.machines.includes(mi))
+    say('观察表格：投入每增加 1，吐出增加多少？那个数就是 k。', {voice:false});
+}
+$('#feedBtn').onclick = ()=>{ doFeed(parseFloat($('#feedIn').value)); $('#feedIn').value=''; $('#feedIn').focus(); };
+document.querySelectorAll('#quickFeeds .qf').forEach(b=>{ b.onclick = ()=> doFeed(parseFloat(b.dataset.v)); });
 $('#feedIn').addEventListener('keydown', e=>{ if(e.key==='Enter') $('#feedBtn').click(); });
 
 function needFeeds(){
   if (feeds[mi].length < 2){ msg('machineMsg','先别猜！至少投两个数字，观察一下再说。','bad'); return true; }
   return false;
 }
+const wrongG = {};
+function wrongHint(){
+  sfx('bad');
+  wrongG[mi] = (wrongG[mi]||0) + 1;
+  if (wrongG[mi] === 2) say('别灰心！投 0 看看吐出什么，再投 1 比一比——两次就能破解。', {voice:false});
+}
 function solve(){
   if (!prog.machines.includes(mi)) prog.machines.push(mi);
   save();
   const m = MACHINES[mi];
   renderMachine();
+  if (prog.machines.length === 5){ sfx('fanfare'); confetti(); } else sfx('good');
   msg('machineMsg', `🎉 破解成功！这台机器的规则是 ${ruleText(m)}` + (prog.machines.length===5 ? '　——五台全破，往下看！' : '　试试下一台？'), 'good');
 }
 $('#guessBtn').onclick = ()=>{
@@ -678,14 +841,14 @@ $('#guessBtn').onclick = ()=>{
   if (isNaN(gk) || isNaN(gb)) return msg('machineMsg','把 k 和 b 两个空都填上再验证。','bad');
   const m = MACHINES[mi];
   if (Math.abs(gk-m.k) < 1e-9 && Math.abs(gb-m.b) < 1e-9) solve();
-  else msg('machineMsg','不对——机器摇了摇头。提示：投入 0 和 1，秘密就在输出里。','bad');
+  else { wrongHint(); msg('machineMsg','不对——机器摇了摇头。提示：投入 0 和 1，秘密就在输出里。','bad'); }
 };
 function guessSpecial(){
   if (needFeeds()) return;
   const sel = document.querySelector('input[name=mchoice]:checked');
   if (!sel) return msg('machineMsg','先选一个规则再验证。','bad');
   if (+sel.value === MACHINES[mi].ans) solve();
-  else msg('machineMsg','不对——多投几个数试试，比如 2、3、−2，找找规律。','bad');
+  else { wrongHint(); msg('machineMsg','不对——多投几个数试试，比如 2、3、−2，找找规律。','bad'); }
 }
 
 /* ================= 实验一 · 一次函数实验台 ================= */
@@ -768,9 +931,11 @@ function labUpdate(){
     needMove = false; stars++;
     lin.star.textContent='🌟';
     if (stars>=3){
+      sfx('fanfare'); confetti();
       msg('labMsg','⭐⭐⭐ 三连星！k 和 b 已经被你玩明白了。往下看「想一想」，把它说出来。','good');
       prog.lab = true; save();
     } else {
+      sfx('star');
       msg('labMsg',`🌟 命中第 ${stars} 颗星！下一颗马上出现……`,'good');
       setTimeout(()=>{ ti=(ti+1)%TARGETS.length; lin.star.textContent='⭐'; labUpdate(); }, RM?0:900);
     }
@@ -831,6 +996,7 @@ function sqUpdate(){
 $('#sqA').addEventListener('input', sqUpdate);
 $('#sqB').addEventListener('input', sqUpdate);
 $('#explodeBtn').onclick = ()=>{
+  sfx('snap');
   exploded = !exploded;
   $('#explodeBtn').textContent = exploded ? '🧩 拼回去' : '🧩 把拼图拆开看';
   if (!prog.formula.sq){ prog.formula.sq = true; save(); }
@@ -906,6 +1072,7 @@ $('#dfA').addEventListener('input', ()=>dfUpdate(true));
 $('#dfB').addEventListener('input', ()=>dfUpdate(true));
 $('#cutBtn').onclick = ()=>{
   if (tweening) return;
+  sfx('snap');
   cut = !cut;
   $('#cutBtn').textContent = cut ? '↩️ 变回正方形' : '✂️ 剪开，重新拼！';
   if (!prog.formula.df){ prog.formula.df = true; save(); }
@@ -915,7 +1082,7 @@ $('#cutBtn').onclick = ()=>{
 /* ================= 实验二 · 拼图三 因式分解 ================= */
 const FXL = [ {b:5,c:6}, {b:6,c:8}, {b:7,c:12}, {b:8,c:16} ];
 const FX = { u:30, xl:104, ox:46, oy:34 };
-let fxi = 0, fm = 1, fnv = 1;
+let fxi = 0, fm = 1, fnv = 1, fxHint = false;
 const fxsvg = $('#fxsvg');
 function fxPoly(l){ return `x² + ${l.b}x + ${l.c}`; }
 function fxDots(){
@@ -925,7 +1092,7 @@ function fxDots(){
     const done = (prog.formula.fxdone||[]).includes(i);
     btn.textContent = (done?'✓ ':'') + fxPoly(l);
     btn.className = (i===fxi?'cur ':'') + (done?'solved':'');
-    btn.onclick = ()=>{ fxi=i; fm=1; fnv=1; fxRender(); };
+    btn.onclick = ()=>{ fxi=i; fm=1; fnv=1; fxHint=false; fxRender(); };
     d.appendChild(btn);
   });
 }
@@ -953,19 +1120,26 @@ function fxRender(){
     `<span class="chip${okS?' ok':''}">长条 x：已用 ${usedS} / 库存 ${l.b}${diff(usedS,l.b)}</span>` +
     `<span class="chip${okU?' ok':''}">小方块：已用 ${usedU} / 库存 ${l.c}${diff(usedU,l.c)}</span>`;
   if (okS && okU){
-    msg('fxMsg', `🎉 严丝合缝！${fxPoly(l)} = (x + ${fm})(x + ${fnv})` + (l.c===16 ? '　两条边一样长——这不就是完全平方嘛！' : ''), 'good');
     prog.formula.fxdone = prog.formula.fxdone || [];
-    if (!prog.formula.fxdone.includes(fxi)){ prog.formula.fxdone.push(fxi); save(); fxDots(); }
+    if (!prog.formula.fxdone.includes(fxi)){
+      prog.formula.fxdone.push(fxi); save(); fxDots();
+      if (prog.formula.fxdone.length === FXL.length){ sfx('fanfare'); confetti(); } else sfx('good');
+    }
+    msg('fxMsg', `🎉 严丝合缝！${fxPoly(l)} = (x + ${fm})(x + ${fnv})` + (l.c===16 ? '　两条边一样长——这不就是完全平方嘛！' : ''), 'good', true);
     $('#fxConcept').hidden = (prog.formula.fxdone||[]).length < FXL.length;
   } else {
+    if ((usedS > l.b || usedU > l.c) && !fxHint){
+      fxHint = true;
+      say('积木超出库存啦——把边收短一点试试。', {voice:false});
+    }
     msg('fxMsg', '调整两条边，让两个库存指标同时变绿。', 'info');
     $('#fxConcept').hidden = (prog.formula.fxdone||[]).length < FXL.length;
   }
 }
-$('#fmMinus').onclick = ()=>{ fm=Math.max(1,fm-1); fxRender(); };
-$('#fmPlus').onclick  = ()=>{ fm=Math.min(6,fm+1); fxRender(); };
-$('#fnMinus').onclick = ()=>{ fnv=Math.max(1,fnv-1); fxRender(); };
-$('#fnPlus').onclick  = ()=>{ fnv=Math.min(6,fnv+1); fxRender(); };
+$('#fmMinus').onclick = ()=>{ sfx('tick'); fm=Math.max(1,fm-1); fxRender(); };
+$('#fmPlus').onclick  = ()=>{ sfx('tick'); fm=Math.min(6,fm+1); fxRender(); };
+$('#fnMinus').onclick = ()=>{ sfx('tick'); fnv=Math.max(1,fnv-1); fxRender(); };
+$('#fnPlus').onclick  = ()=>{ sfx('tick'); fnv=Math.min(6,fnv+1); fxRender(); };
 
 /* ================= 实验三 · 全等三角形 ================= */
 const TA = {x:2, y:1.2}, TB = {x:10, y:1.2};
@@ -1111,8 +1285,10 @@ function trySnapRecord(){
           $('#triConc').innerHTML = lv.conc; $('#triConc').hidden = false;
           $('#triSummary').hidden = prog.tri.length < 4;
           renderLevelTabs();
+          if (prog.tri.length === 4){ sfx('fanfare'); confetti(); } else sfx('good');
           msg('triMsg', prog.tri.length===4 ? '🏆 四关全部通关！下面是你亲手做出的判定表。' : `✓ 本关完成！${li<3?'去挑战下一关。':''}`,'good');
         } else {
+          sfx('snap');
           msg('triMsg',`✓ 找到第 ${found.length} 个位置！别停——继续沿着射线找下一个……`,'good');
         }
       }
@@ -1169,7 +1345,7 @@ $('#resetProg').onclick = function(){
     setTimeout(()=>{ resetArmed=false; this.textContent='清空全部实验进度'; }, 3000);
     return;
   }
-  prog = { machines:[], tri:[], formula:{} };
+  prog = { machines:[], tri:[], formula:{}, snd:sndOn, vox:voxOn };
   save();
   this.textContent = '已清空 ✓';
   renderMachine(); loadLevel(); fxRender();
@@ -1177,6 +1353,7 @@ $('#resetProg').onclick = function(){
 
 /* ---------- 启动 ---------- */
 badges();
+syncTgl();
 renderMachine();
 labUpdate();
 sqUpdate();
